@@ -1,0 +1,53 @@
+from django.db import models
+
+# Create your models here.
+# This is just to get and idea of the model. ToDo: Split out holiday types to seperate models possibly.
+class PricePrediction(models.Model):
+    id = models.BigAutoField(null=False, blank=False),
+    url = models.CharField(max_length=256, null=True, blank=True),
+    accom_stars = models.IntegerField(null=True, blank=False),
+    staff_pick = models.IntegerField(null=True, blank=False),
+    trip_adv_rating = models.IntegerField(null=True, blank=False),
+    trip_adv_reviews = models.IntegerField(null=True, blank=False),
+    has_swimming_pool = models.IntegerField(null=True, blank=False),
+    has_sauna = models.IntegerField(null=True, blank=False),
+    has_jacuzzi = models.IntegerField(null=True, blank=False),
+    has_tv_in_room = models.IntegerField(null=True, blank=False),
+    has_air_conditioning = models.IntegerField(null=True, blank=False),
+    has_wifi = models.IntegerField(null=True, blank=False),
+    has_hot_tub = models.IntegerField(null=True, blank=False),
+    has_lift = models.IntegerField(null=True, blank=False),
+    suitable_for_children = models.IntegerField(null=True, blank=False),
+    has_child_care = models.IntegerField(null=True, blank=False),
+    has_bar = models.IntegerField(null=True, blank=False),
+    has_sea_view = models.IntegerField(null=True, blank=False),
+    close_to_resort = models.IntegerField(null=True, blank=False),
+    close_to_lift = models.IntegerField(null=True, blank=False),
+    ski_in_ski_out = models.IntegerField(null=True, blank=False),
+    days_booked_before_travel = models.IntegerField(null=True, blank=False),
+    holiday_duration = models.IntegerField(null=True, blank=False),
+    travel_week = models.IntegerField(null=True, blank=False),
+    booking_week = models.IntegerField(null=True, blank=False),
+    apartment = models.IntegerField(null=True, blank=False),
+    holiday_home = models.IntegerField(null=True, blank=False),
+    hotel = models.IntegerField(null=True, blank=False),
+    chalet = models.IntegerField(null=True, blank=False),
+    bed_and_breakfast = models.IntegerField(null=True, blank=False),
+    half_board = models.IntegerField(null=True, blank=False),
+    full_board = models.IntegerField(null=True, blank=False),
+    all_enclusive = models.IntegerField(null=True, blank=False),
+    self_catering = models.IntegerField(null=True, blank=False),
+    dep_DUB = models.IntegerField(null=True, blank=False),
+    dep_BFS = models.IntegerField(null=True, blank=False),
+    dep_BHD = models.IntegerField(null=True, blank=False),
+    dep_ORK = models.IntegerField(null=True, blank=False),
+    dep_LGW = models.IntegerField(null=True, blank=False),
+    dep_MAN = models.IntegerField(null=True, blank=False),
+    predicted_price = models.FloatField(null=True, blank=False)
+
+class ModelTrainingHistory(models.Model):
+    id = models.BigAutoField(null=False, blank=False),
+    url = models.CharField(max_length=256, null=True, blank=True),
+    user = models.CharField(max_length=256, null=False, blank=False),
+    trained_date = models.DateTimeField(auto_now=True, null=False, blank=False),
+    accuracy_r2 = models.IntegerField(null=False, blank=False)
