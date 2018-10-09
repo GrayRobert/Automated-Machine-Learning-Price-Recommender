@@ -1,3 +1,5 @@
+Note this is so far just a django shell of a project to get a basic API up before pluggin in the machine learning model
+
 # Load the Python Virtual Environment
 source venv/bin/activate
 
