@@ -1,14 +1,20 @@
 from rest_framework import serializers
-from .models import PricePrediction, ModelTraining
+from .models import EuropeanSun, WinterSki, ModelTraining
 
-class PricePredictionSerializer(serializers.HyperlinkedModelSerializer):
+class EuropeanSunSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
     class Meta:
-        model = PricePrediction
-        fields = ('id', 'hotel_code', 'url', 'predicted_price')
+        model = EuropeanSun
+        exclude = ['predicted_price']
+
+class WinterSkiSerializer(serializers.HyperlinkedModelSerializer):
+    url = serializers.ReadOnlyField()
+    class Meta:
+        model = WinterSki
+        exclude = ['predicted_price']
 
 class ModelTrainingSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
     class Meta:
         model = ModelTraining
-        fields = ('id', 'user', 'url', 'trained_date', 'accuracy_r2')
+        exclude = ['accuracy_r2']
