@@ -1,15 +1,14 @@
 from rest_framework import serializers
-from recommender.models import PricePrediction
-from recommender.models import ModelTrainingHistory
+from .models import PricePrediction, ModelTraining
 
 class PricePredictionSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
     class Meta:
         model = PricePrediction
-        fields = ('id', 'url', 'predicted_price')
+        fields = ('id', 'hotel_code', 'url', 'predicted_price')
 
-class ModelTrainingHistorySerializer(serializers.HyperlinkedModelSerializer):
+class ModelTrainingSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
     class Meta:
-        model = ModelTrainingHistory
-        fields = ('id', 'url', 'user', 'trained_date', 'accuracy_r2')
+        model = ModelTraining
+        fields = ('id', 'user', 'url', 'trained_date', 'accuracy_r2')

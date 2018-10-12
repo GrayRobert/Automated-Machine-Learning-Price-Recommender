@@ -1,8 +1,9 @@
 from recommender.models import PricePrediction
-from recommender.models import ModelTrainingHistory
+from recommender.models import ModelTraining 
 from recommender.serializers import PricePredictionSerializer
-from recommender.serializers import ModelTrainingHistorySerializer
+from recommender.serializers import ModelTrainingSerializer
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.reverse import reverse
 from rest_framework.decorators import list_route
@@ -13,24 +14,16 @@ class PricePredictionViewSet(viewsets.ModelViewSet):
   queryset = PricePrediction.objects.all()
   serializer_class = PricePredictionSerializer
 
-  def perform_create(self, serializer):
-    instance = serializer.save()
-    instance.url = reverse('price-prediction-detail', args=[instance.pk], request=self.request)
-    instance.save()
+class ModelTrainingViewSet(viewsets.ModelViewSet):
+  queryset = ModelTraining.objects.all()
+  serializer_class = ModelTrainingSerializer
 
-  def delete(self, request):
-    PricePrediction.objects.all().delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+class PredictPriceViewSet(viewsets.ViewSet):
 
-class ModelTrainingHistoryViewSet(viewsets.ModelViewSet):
-  queryset = ModelTrainingHistory.objects.all()
-  serializer_class = ModelTrainingHistorySerializer
+  def list(self, request, format=None):
+    serializer_class = PricePredictionSerializer
+    hotelCode = request.query_params.get('hotel_code') if request.query_params.get('hotel_code') else 'TEST'
+    prediction = '{"Hotel Code" : "%s", "Predicted Price": %d}' % (hotelCode,999.99)
+    return Response(prediction)
 
-  def perform_create(self, serializer):
-    instance = serializer.save()
-    instance.url = reverse('model-training-history-detail', args=[instance.pk], request=self.request)
-    instance.save()
 
-  def delete(self, request):
-    ModelTrainingHistory.objects.all().delete()
-    return Response(status=status.HTTP_204_NO_CONTENT) 
