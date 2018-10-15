@@ -16,7 +16,7 @@ import numpy as np
 PROJECT_DIR = os.getcwd()
 MODEL_DIR = os.path.join(PROJECT_DIR,'models')
 EUR_SUN_MODEL_JOBLIB = os.path.join(MODEL_DIR, "european_sun_model.joblib")
-winterFeatures = [
+summerFeatures = [
   'accom_stars',
   'staff_pick',
   'trip_adv_rating',
@@ -46,9 +46,9 @@ winterFeatures = [
 def predictPrice(request):
   model = joblib.load(EUR_SUN_MODEL_JOBLIB)
 
-  df = pd.DataFrame(columns=winterFeatures)
+  df = pd.DataFrame(columns=summerFeatures)
 
-  for feature in winterFeatures:
+  for feature in summerFeatures:
     #hotel_code if for reference only it's not part of the trained model
     if feature == 'hotel_code':
       continue
@@ -82,7 +82,7 @@ class PredictPriceViewSet(viewsets.ViewSet):
     predictedPrice = predictPrice(request)
     prediction = {
       "Hotel Code": str(hotelCode), 
-      "Predicted Price": str(predictedPrice)
+      "Recommended Price": predictedPrice
     }
     return Response(prediction)
 
