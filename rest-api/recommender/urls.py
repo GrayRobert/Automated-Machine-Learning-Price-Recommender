@@ -1,5 +1,5 @@
 from django.conf.urls import url, include
-from recommender.views import PredictPriceViewSet, TrainModelViewSet, EuropeanSunViewSet, WinterSkiViewSet, ModelTrainingViewSet
+from recommender.views import PredictPriceViewSet, TrainModelViewSet, EuropeanSunViewSet, WinterSkiViewSet, ModelTrainingViewSet, FileUploadView
 from rest_framework.routers import DefaultRouter
 
 # Create a router and register our viewsets with it.
@@ -12,5 +12,6 @@ router.register(r'train/model', TrainModelViewSet , base_name='train-model')
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
-    url(r'^', include(router.urls))
+    url(r'^', include(router.urls)),
+    url(r'^upload/(?P<filename>[^/]+)$', FileUploadView.as_view())
 ]

@@ -19,13 +19,12 @@ export class APIService{
     }
 
     uploadFile(formData) {
-        const url = `${API_URL}/upload/file`;
-        return axios.post(url, formData)
+        const url = `${API_URL}/upload/training_data.csv`;
+
+        return axios.put(url, formData,
+            )
         // get data
-        .then(x => x.data)
-        // add url field
-        .then(x => x.map(file => Object.assign({},
-            file, { url: `${API_URL}/upload/csv/${file.id}` })));
+        .then(response => response.data)
     }
 
 }

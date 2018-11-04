@@ -1,12 +1,18 @@
 from recommender.models import EuropeanSun, WinterSki, ModelTraining 
 from recommender.serializers import EuropeanSunSerializer, WinterSkiSerializer, ModelTrainingSerializer
 from rest_framework import status
-from rest_framework.views import APIView
+from rest_framework import views
 from rest_framework import viewsets
 from rest_framework.reverse import reverse
 from rest_framework.decorators import list_route
 from rest_framework.response import Response
+from rest_framework.decorators import parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.exceptions import ParseError
 from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
 import os
 from sklearn.externals import joblib
 import pandas as pd
@@ -153,6 +159,8 @@ class ModelTrainingViewSet(viewsets.ModelViewSet):
   queryset = ModelTraining.objects.all()
   serializer_class = ModelTrainingSerializer
 
+
+# Main Prediction Endpoint
 class PredictPriceViewSet(viewsets.ViewSet):
 
   def list(self, request, format=None):
@@ -164,10 +172,42 @@ class PredictPriceViewSet(viewsets.ViewSet):
     }
     return Response(prediction)
 
+
+# Main Training Endpoint
 class TrainModelViewSet(viewsets.ViewSet):
   
   def list(self, request, format=None):
     accuracy = trainModel(request)
     return Response(accuracy)
+
+
+# File Upload Endpoint
+class FileUploadView(views.APIView):
+  parser_classes = (MultiPartParser, FormParser,)
+
+  def put(self, request, filename, format=None):
+
+    # Quick sanity test before we do anything
+    if 'file' not in request.data:
+      raise ParseError("Empty content")
+
+    file = request.FILES['file']
+
+    # Try save the file
+    try:
+      response = {
+        "FileName": str(file), 
+        "Status": "success"
+      }
+
+      # Note file is currently always overwriting
+      filePath = os.path.join(FILES_DIR, "training_data.csv")
+      print("Saving File: " + str(filePath))
+      default_storage.save(filePath, ContentFile(file.read()))
+
+      return Response(response, status=200)
+    # Otherwise thow an error, this is returned to the client by Django
+    except:
+      raise ParseError("Failed to save file")
 
 

@@ -5,7 +5,7 @@
             <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
                 <h1>Upload CSV File</h1>
                 <div class="dropbox">
-                <input type="file" multiple :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
+                <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
                     accept="text/csv" class="input-file">
                     <p v-if="isInitial">
                     Drop your file(s) here <br> or click to browse
@@ -25,8 +25,8 @@
                     <a href="javascript:void(0)" @click="reset()">Upload again</a>
                     </p>
                     <ul class="list-unstyled">
-                    <li v-for="item in uploadedFiles">
-                        <img :src="item.url" class="img-responsive img-thumbnail" :alt="item.originalName">
+                    <li v-for="file in uploadedFiles">
+                        {{ file }}
                     </li>
                     </ul>
                 </div>
@@ -67,7 +67,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         accuracy: null,
         uploadError: null,
         currentStatus: null,
-        uploadFieldName: 'csv'
+        uploadFieldName: 'file'
         };
     },
     computed: {
@@ -96,8 +96,8 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         this.currentStatus = STATUS_SAVING;
 
             apiService.uploadFile(formData)
-                .then(x => {
-                this.uploadedFiles = [].concat(x);
+                .then(response => {
+                this.uploadedFiles = [].concat(response.FileName);
                 this.currentStatus = STATUS_SUCCESS;
                 })
                 .catch(err => {
