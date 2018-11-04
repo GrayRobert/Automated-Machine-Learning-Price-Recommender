@@ -29,9 +29,28 @@
         <b-card>
           <b-row>
             <b-col sm="5">
-              <h4 id="traffic" class="card-title mb-0">Prediction</h4>
+              <h1>Test Model Prediction</h1>
             </b-col>
             <b-col sm="7" class="d-none d-md-block">
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col>
+              <b-form-group
+                label="Select Machine Learning Model"
+                label-for="model_select_predict"
+                :label-cols="10"
+                :horizontal="false">
+                <b-form-radio-group id="model_select_predict"
+                  :plain="true"
+                  :options="[
+                    {text: 'Random Forrest ',value: 'RFR'},
+                    {text: 'Xtra Trees ',value: 'EXT'},
+                  ]"
+                  :checked="2" v-model="model_select_predict">
+                </b-form-radio-group>
+              </b-form-group>
+              <hr class="nice" />
             </b-col>
           </b-row>
           <b-row>
@@ -136,12 +155,26 @@
             </b-col>
           </b-row>
           <div slot="footer">
-            <b-row class="text-center">
+            <b-row>
               <b-col class="col-sm-3">
-                <b-button type="submit" size="sm" variant="primary" v-on:click="getPrediction"><i class="fa fa-dot-circle-o"></i> Submit</b-button>
+                <b-button type="submit" size="sm" variant="primary" v-on:click="getPrediction"><i class="fa fa-dot-circle-o"></i> Predict Price</b-button>
               </b-col>
               <b-col class="col-sm-9">
-                <span v-if="results !== null">Predicted Price: {{ results.RecommendedPrice[0] | currency}}</span>
+                <b-row v-if="predictingInProgress">
+                    <b-col class="col-sm-2">
+                        <div>
+                            <atom-spinner
+                            :animation-duration="1000"
+                            :size="30"
+                            color="#20a8d8"
+                            />
+                        </div>
+                    </b-col>
+                    <b-col class="col-sm-10">
+                        <span class="predicting-text">Predicting in progress...</span>
+                    </b-col>
+                </b-row>
+                <div v-if="results !== null">Predicted Price: {{ results.RecommendedPrice[0] | currency}}</div>
               </b-col>
             </b-row>
           </div>
@@ -169,17 +202,20 @@
 <script>
 import FileUpload from './custom/FileUpload'
 import {APIService} from '../APIService'
+import { AtomSpinner } from 'epic-spinners'
 
 const apiService = new APIService();
 
 export default {
   name: 'dashboard',
   components: {
-    FileUpload
+    FileUpload,
+    AtomSpinner
   },
   data: function () {
     return {
       results: null,
+      model_select_predict: 'RFR',
       hotel_code: 'TEST1',
       accom_stars: 3,
       staff_pick: 0,
@@ -187,15 +223,19 @@ export default {
       has_swimming_pool: 1,
       travel_week: 26,
       booking_week: 26,
+      predictingInProgress: false
     }
   },
   methods: {
     getPrediction(){
-      let queryString = 'hotel_code=' + this.hotel_code + '&staff_pick=' + this.staff_pick + '&trip_adv_rating=' + this.trip_adv_rating + '&accom_stars=' + this.accom_stars + '&travel_week=' + this.travel_week + '&booking_week=' + this.booking_week
+      this.predictingInProgress = true
+      let queryString = 'hotel_code=' + this.hotel_code + '&staff_pick=' + this.staff_pick + '&trip_adv_rating=' + this.trip_adv_rating + '&accom_stars=' + this.accom_stars + '&travel_week=' + this.travel_week + '&booking_week=' + this.booking_week + '&model_type=' + this.model_select_predict
       console.log('Query String is: ' + queryString)
       apiService.predictPrice(queryString).then((data) => {
               this.results = data;
+              this.predictingInProgress = false
           })
+      
       },
   },
   mounted () {
@@ -209,4 +249,14 @@ export default {
   #card-chart-01, #card-chart-02 {
     width: 100% !important;
   }
+  hr.nice {
+    border-top: 1px dotted #8c8b8b;
+    border-bottom: 1px dotted #fff;
+  }
+  .predicting-text {
+        margin-top:5px;
+        color:#20a8d8;
+        vertical-align: middle;
+        display: inline-block;
+    }
 </style>

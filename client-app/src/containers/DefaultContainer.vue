@@ -1,14 +1,14 @@
 <template>
   <div class="app">
     <AppHeader fixed class="app-header">
-      <SidebarToggler class="d-lg-none" display="md" mobile />
-      <SidebarToggler class="d-md-down-none" display="lg" />
+      <SidebarToggler class="d-lg-none" mobile />
+      <SidebarToggler class="d-md-down-none" />
       <b-navbar-nav class="ml-auto">
         <DefaultHeaderDropdownAccnt/>
       </b-navbar-nav>
     </AppHeader>
     <div class="app-body">
-      <AppSidebar fixed>
+      <AppSidebar class="d-none">
         <SidebarHeader/>
         <SidebarForm/>
         <SidebarNav :navItems="nav"></SidebarNav>

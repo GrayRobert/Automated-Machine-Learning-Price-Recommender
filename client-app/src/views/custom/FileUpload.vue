@@ -7,6 +7,7 @@
                 <div class="dropbox">
                 <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
                     accept="text/csv" class="input-file">
+                    <div class="arrow-down"></div>
                     <p v-if="isInitial">
                     Drop your file(s) here <br> or click to browse
                     </p>
@@ -40,12 +41,44 @@
                 </div>
               </b-col>
           </b-row>
+          <b-row>
+            <b-col>
+              <b-form-group
+                label="Select Machine Learning Model"
+                label-for="model_select_train"
+                :label-cols="10"
+                :horizontal="false">
+                <b-form-radio-group id="model_select_train"
+                  :plain="true"
+                  :options="[
+                    {text: 'Random Forrest ',value: 'RFR'},
+                    {text: 'Xtra Trees ',value: 'EXT'},
+                  ]"
+                  :checked="2" v-model="model_select_train">
+                </b-form-radio-group>
+              </b-form-group>
+            </b-col>
+          </b-row>
           <div slot="footer">
             <b-row>
                 <b-col class="col-sm-3">
                     <b-button type="submit" size="sm" variant="primary" v-on:click="trainModel"><i class="fa fa-dot-circle-o"></i> Train Model</b-button>
                 </b-col>
                 <b-col class="col-sm-9">
+                    <b-row v-if="trainingInProgress">
+                        <b-col class="col-sm-2">
+                            <div>
+                                <atom-spinner
+                                :animation-duration="1000"
+                                :size="30"
+                                color="#20a8d8"
+                                />
+                            </div>
+                        </b-col>
+                        <b-col class="col-sm-10">
+                            <span class="training-text">Training in progress...</span>
+                        </b-col>
+                    </b-row>
                     <div id="accuracy"><span v-if="accuracy !== null">Accuracy: {{ accuracy.R2 }}</span></div>
                 </b-col>
             </b-row>
@@ -56,18 +89,26 @@
 <script>
 import * as d3 from 'd3';
 import {APIService} from '../../APIService'
-const apiService = new APIService();
+import { AtomSpinner } from 'epic-spinners'
+
+const apiService = new APIService()
+
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3;
 
   export default {
+    components: {
+      AtomSpinner
+    },
     data: function() {
         return {
         uploadedFiles: [],
         accuracy: null,
         uploadError: null,
         currentStatus: null,
-        uploadFieldName: 'file'
+        uploadFieldName: 'file',
+        trainingInProgress: false,
+        model_select_train: 'RFR',
         };
     },
     computed: {
@@ -122,10 +163,12 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             this.save(formData);
         },
         trainModel(){
-            let queryString = ''
+            this.trainingInProgress = true
+            let queryString = 'model_type=' + this.model_select_train
             console.log('Query String is: ' + queryString)
             apiService.trainModel(queryString).then((data) => {
-                    this.accuracy = data;
+                    this.accuracy = data
+                    this.trainingInProgress = false
                 })
         },
     },
@@ -137,9 +180,12 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
 
 <style>
     .dropbox {
-        outline: 2px dashed grey; /* the dash box */
-        outline-offset: -10px;
-        background: lightcyan;
+        border: 20px;
+        border-top: 0;
+        border-style: solid;
+        border-color: rgb(243, 241, 241);
+        margin:30px;
+        background: rgba(255, 255, 255, 0.705);
         color: dimgray;
         padding: 10px 10px;
         min-height: 200px; /* minimum height */
@@ -156,12 +202,30 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
     }
 
     .dropbox:hover {
-        background: lightblue; /* when mouse over to the drop zone, change color */
+        background: rgba(235, 235, 235, 0.562); /* when mouse over to the drop zone, change color */
     }
 
     .dropbox p {
         font-size: 1.2em;
         text-align: center;
         padding: 50px 0;
+    }
+
+    .arrow-down {
+        width: 0; 
+        height: 0;
+        left: 45%;
+        top:20%;
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+
+        border-top: 20px solid rgb(231, 231, 231);
+        position: absolute;
+    }
+    .training-text {
+        margin-top:5px;
+        color:#20a8d8;
+        vertical-align: middle;
+        display: inline-block;
     }
 </style>
