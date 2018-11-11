@@ -12,6 +12,8 @@ from tpot.builtins import StackingEstimator
 from sklearn.preprocessing import FunctionTransformer
 import os
 
+from recommender.services.database import DatabaseStorageController
+
 # CONSTANTS
 FILES_FOLDER = 'files'
 TRAINING_DATA = 'training_data.csv'
@@ -20,46 +22,51 @@ JOBLIB_EXTENTION = '.joblib'
 class ModelTrainingService():
 
     # CONSTRUCTOR
-    def __init__(self, independentVariables, dependentVariable, modelType):
+    def __init__(self, independentVariables, dependentVariable, encodeCatList, encodeDateList, dropList, modelType):
         self.independentVariables = independentVariables
         self.dependentVariable = dependentVariable
+        self.encodeCatList = encodeCatList
+        self.encodeDateList = encodeDateList
+        self.dropList = dropList
         self.modelType = modelType
         self.projectDir = os.getcwd()
         self.filesDir = os.path.join(self.projectDir, FILES_FOLDER)
         self.trainingData = os.path.join(self.filesDir, TRAINING_DATA)
-        self.pickledModel = os.path.join(self.filesDir, modelType + JOBLIB_EXTENTION)
 
     # TRAIN MODEL
     def trainModel(self):
         print("Reading CSV training data...\n")
         data = pd.read_csv(self.trainingData)
 
-        ## Convert to dates
-        data.travel_date = pd.to_datetime(data.travel_date, format='%Y/%m/%d')
-        data.booking_date = pd.to_datetime(data.booking_date, format='%Y/%m/%d')
+        ## Encode Date Fields. ToDo: provide encoding options, default is week of the year
+        for dateField in self.encodeDateList:
+            print("Date Field encoded as week: " + str(dateField))
+            data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
 
-        ## Drop what we don't need
+        ## Drop what we don't need. ToDo: make imupation optional
         data.dropna(inplace=True)
-        data.drop('accomodation', axis=1, inplace=True)
-        data.drop('accom_location', axis=1, inplace=True)
-        data.drop('destination', axis=1, inplace=True)
-        data.drop('accom_id', axis=1, inplace=True)
-        data = data.drop('departure_airport', axis=1)
-        data = data.drop('accom_type', axis=1)
-        data = data.drop('accom_board_basis', axis=1)
 
-        ## Add Weeks, important for seasonality
-        data['travel_week'] = data['travel_date'].dt.week
-        data['booking_week'] = data['booking_date'].dt.week
+        # Drop Fields
+        for dropField in self.dropList:
+            print("Field being dropped: " + dropField)
+            data.drop(dropField, axis=1, inplace=True)
 
-        data.drop('travel_date', axis=1, inplace=True)
-        data.drop('booking_date', axis=1, inplace=True)
+        # Encode Categorical Fields & Dummy
+        for catField in self.encodeCatList:
+            print("Field being enocded as dummy: " + catField)
+            data[catField] = data[catField].astype('category')
 
-        ## Re-Index
+        # Encode Dummies For All Categorical Data
+        data=pd.get_dummies(data)
+
+        # Re-Index
         data.index = range(len(data))
 
+        # Show data
+        print(data.head())
+
         # Set predictor/target variable
-        y=np.array(data.price_per_person)
+        y=np.array(data[self.dependentVariable])
 
         # Drop the target variable and create a numpy array of dataframe
         data.drop(self.dependentVariable, axis=1, inplace=True)
@@ -69,7 +76,7 @@ class ModelTrainingService():
         # ## Split data into training and test sets
         print("Train/Test Split...\n")
         X_train, X_test, y_train, y_test = train_test_split(
-            X,y, test_size=0.33, random_state=42)
+            X,y, test_size=0.20, random_state=42)
 
 
         print("Training Model As: " + self.modelType + "\n")
@@ -99,7 +106,7 @@ class ModelTrainingService():
             "Pearson": str(pearson)
             }
 
-        print("Accuract is: " + str(accuracy))
+        print("Accuracy is: " + str(accuracy))
         #fig, ax = plt.subplots()
         #ax.scatter(y_test, predicted_test, edgecolors=(0, 0, 0))
         #ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
@@ -108,7 +115,15 @@ class ModelTrainingService():
         #plt.title('Plot of Predicted V Actual')
         #plt.savefig("PredictedVActual.pdf", format="pdf")
         #plt.show()
+
+        # Store model training history
+        database = DatabaseStorageController('UserID')
+        modelID = database.storeTrainedModel(self.independentVariables, self.dependentVariable, self.encodeCatList, self.encodeDateList, self.dropList, self.modelType, r2, 1.0)
+
+        modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
         print("Pickling Model...\n")
-        joblib.dump(model, self.pickledModel)
+        joblib.dump(model, modelFile)
+
+        database.updateModelFile(modelID, modelFile)
 
         return accuracy

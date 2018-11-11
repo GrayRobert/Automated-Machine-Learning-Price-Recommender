@@ -2,7 +2,7 @@
   <div class="animated fadeIn">
     <b-row>
       <b-col>
-              <FileUpload/>
+              <TrainModel/>
       </b-col>
       <b-col>
         <b-card>
@@ -181,18 +181,15 @@
         </b-card>
       </b-col>
       <b-col>
-        <b-card>
-          <b-row>
-            <b-col sm="5">
-              <h4 id="traffic" class="card-title mb-0">Model Training History</h4>
-            </b-col>
-            <b-col sm="7" class="d-none d-md-block">
-            </b-col>
-          </b-row>
-          <div slot="footer">
-            <b-row class="text-center">
-            </b-row>
-          </div>
+        <b-card header="Model Training History">
+          <b-table striped hover responsive="sm" :items="history" :fields="historyFields" :current-page="currentPage" :per-page="perPage">
+            <template slot="actions" slot-scope="cell">
+              <b-btn size="sm" v-if="cell.item.model_file" @click.stop="deleteModel(cell.item.id)">Delete</b-btn>
+            </template>
+          </b-table>
+          <nav>
+            <b-pagination :total-rows="getRowCount(history)" :per-page="perPage" v-model="currentPage" prev-text="Prev" next-text="Next" hide-goto-end-buttons/>
+          </nav>
         </b-card>
       </b-col>
     </b-row>
@@ -200,16 +197,18 @@
 </template>
 
 <script>
-import FileUpload from './custom/FileUpload'
+import TrainModel from './custom/TrainModel'
 import {APIService} from '../APIService'
 import { AtomSpinner } from 'epic-spinners'
+import moment from 'moment'
+import numeral from 'numeral'
 
 const apiService = new APIService();
 
 export default {
   name: 'dashboard',
   components: {
-    FileUpload,
+    TrainModel,
     AtomSpinner
   },
   data: function () {
@@ -223,13 +222,29 @@ export default {
       has_swimming_pool: 1,
       travel_week: 26,
       booking_week: 26,
-      predictingInProgress: false
+      predictingInProgress: false,
+      history: [],
+      historyFields: [
+        {key: 'id'},
+        {key: 'model_type'},
+        {key: 'dependent_variable'},
+        {
+          key: 'trained_date',
+          formatter: (value) => { return moment(value).format('MMM Do YYYY, h:mm:ss a') }
+        },
+        {key: 'accuracy_r2',
+          formatter: (value) => { return numeral(value).format('0.00%')}},
+        {key: 'actions'}
+      ],
+      currentPage: 1,
+      perPage: 8,
+      totalRows: 0
     }
   },
   methods: {
     getPrediction(){
       this.predictingInProgress = true
-      let queryString = 'hotel_code=' + this.hotel_code + '&staff_pick=' + this.staff_pick + '&trip_adv_rating=' + this.trip_adv_rating + '&accom_stars=' + this.accom_stars + '&travel_week=' + this.travel_week + '&booking_week=' + this.booking_week + '&model_type=' + this.model_select_predict
+      let queryString = 'hotel_code=' + this.hotel_code + '&staff_pick=' + this.staff_pick + '&has_swimming_pool=' + this.has_swimming_pool + '&trip_adv_rating=' + this.trip_adv_rating + '&accom_stars=' + this.accom_stars + '&travel_week=' + this.travel_week + '&booking_week=' + this.booking_week + '&model_type=' + this.model_select_predict
       console.log('Query String is: ' + queryString)
       apiService.predictPrice(queryString).then((data) => {
               this.results = data;
@@ -237,9 +252,25 @@ export default {
           })
       
       },
+      getModelTrainingHistory(){
+      apiService.getModelTrainingHistory().then((data) => {
+              this.history = data;
+          })
+      
+      },
+      getRowCount (items) {
+        return items.length
+      },
+      deleteModel (modelID) {
+        console.log('Deleted model: ' + modelID)
+        apiService.deleteModel(modelID).then((data) => {
+              this.getModelTrainingHistory()
+          })
+      }
   },
   mounted () {
     //this.getPrediction()
+    this.getModelTrainingHistory()
   }
 }
 </script>

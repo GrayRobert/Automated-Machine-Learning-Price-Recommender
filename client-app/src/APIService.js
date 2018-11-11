@@ -9,22 +9,43 @@ export class APIService{
     // Get request to test API TODO: Write UNIT test
     //qs = query string to be passed in
     predictPrice(qs) {
-        const url = `${API_URL}/predict/price?${qs}`;
-        return axios.get(url).then(response => response.data);
+        const url = `${API_URL}/model/predict?${qs}`;
+
+        return axios.get(url)
+        // get data
+        .then(response => response.data);
     }
 
-    trainModel(qs) {
-        const url = `${API_URL}/train/model?${qs}`;
-        return axios.get(url).then(response => response.data);
+    trainModel(formData) {
+        const url = `${API_URL}/model/train`;
+
+        return axios.post(url, formData)
+        // get data
+        .then(response => response.data);
     }
 
     uploadFile(formData) {
-        const url = `${API_URL}/upload/training_data.csv`;
+        const url = `${API_URL}/file/upload/training_data.csv`;
 
-        return axios.put(url, formData,
-            )
+        return axios.put(url, formData)
         // get data
         .then(response => response.data)
+    }
+
+    getModelTrainingHistory() {
+        const url = `${API_URL}/model/traininghistory`;
+
+        return axios.get(url)
+        // get data
+        .then(response => response.data);
+    }
+
+    deleteModel(modelID) {
+        const url = `${API_URL}/model/delete/${modelID}`;
+
+        return axios.delete(url)
+        // get data
+        .then(response => response.data);
     }
 
 }

@@ -1,7 +1,5 @@
 from django.contrib import admin
-from .models import EuropeanSun, WinterSki, ModelTraining
+from .models import ModelTraining
 # Register your models here.
 
-admin.site.register(EuropeanSun)
-admin.site.register(WinterSki)
 admin.site.register(ModelTraining)
