@@ -11,6 +11,7 @@ from sklearn.pipeline import make_pipeline, make_union
 from tpot.builtins import StackingEstimator
 from sklearn.preprocessing import FunctionTransformer
 import os
+import json
 
 from recommender.services.database import DatabaseStorageController
 
@@ -38,29 +39,46 @@ class ModelTrainingService():
         print("Reading CSV training data...\n")
         data = pd.read_csv(self.trainingData)
 
-        ## Encode Date Fields. ToDo: provide encoding options, default is week of the year
-        for dateField in self.encodeDateList:
-            print("Date Field encoded as week: " + str(dateField))
-            data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
-
-        ## Drop what we don't need. ToDo: make imupation optional
-        data.dropna(inplace=True)
-
         # Drop Fields
-        for dropField in self.dropList:
-            print("Field being dropped: " + dropField)
-            data.drop(dropField, axis=1, inplace=True)
+        if len(self.dropList) > 0:
+            for dropField in self.dropList:
+                print("Field being dropped: " + dropField)
+                data.drop(dropField, axis=1, inplace=True, errors='ignore')
 
-        # Encode Categorical Fields & Dummy
-        for catField in self.encodeCatList:
-            print("Field being enocded as dummy: " + catField)
-            data[catField] = data[catField].astype('category')
+        # We store one record as a sample JSON object that will later be used to consturct test prediction form based on the fields of the model
+        # This is because the model fields are dynamic and can vary from one trained model to another.
+        testData = data.head(1)
+        testData.drop(self.dependentVariable, axis=1, inplace=True)
+        processedFields = list(testData.columns[:])
+
+        # Encode Date Fields. ToDo: provide encoding options, default is week of the year
+        if len(self.encodeDateList) > 0:
+            for dateField in self.encodeDateList:
+                print("Date Field encoded as week: " + str(dateField))
+                data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
+
+        # Encode Categorical Fields
+        if len(self.encodeCatList) > 0:
+            for catField in self.encodeCatList:
+                if catField != '':
+                    print("Field being enocded as dummy: " + catField)
+                    data[catField] = data[catField].astype('category')
 
         # Encode Dummies For All Categorical Data
-        data=pd.get_dummies(data)
+        if self.encodeCatList[0] != '':
+            data=pd.get_dummies(data, prefix_sep="__", columns=self.encodeCatList)
+
+        ## Put in zeros for any nulls
+        data.fillna(inplace=True, value=0)
 
         # Re-Index
         data.index = range(len(data))
+
+        # Store dummies and processed columns for later
+        dummies = [col for col in data 
+            if "__" in col 
+            and col.split("__")[0] in self.encodeCatList]
+        print("Dummies: " + str(dummies))
 
         # Show data
         print(data.head())
@@ -107,18 +125,12 @@ class ModelTrainingService():
             }
 
         print("Accuracy is: " + str(accuracy))
-        #fig, ax = plt.subplots()
-        #ax.scatter(y_test, predicted_test, edgecolors=(0, 0, 0))
-        #ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
-        #ax.set_xlabel('Actual')
-        #ax.set_ylabel('Predicted')
-        #plt.title('Plot of Predicted V Actual')
-        #plt.savefig("PredictedVActual.pdf", format="pdf")
-        #plt.show()
 
+        # Prepare some test data
+        testJSON = testData.to_json(orient='records')
         # Store model training history
         database = DatabaseStorageController('UserID')
-        modelID = database.storeTrainedModel(self.independentVariables, self.dependentVariable, self.encodeCatList, self.encodeDateList, self.dropList, self.modelType, r2, 1.0)
+        modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, 1.0, str(testJSON))
 
         modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
         print("Pickling Model...\n")

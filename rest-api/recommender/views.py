@@ -22,15 +22,11 @@ from recommender.services.delete import FileDeleteService
 # Main Prediction Endpoint
 class PredictPriceViewSet(viewsets.ViewSet):
   def list(self, request, format=None):
-    hotelCode = request.query_params.get('hotel_code') if request.query_params.get('hotel_code') else 'TEST'
-    independentVariables = {} #TBU
-    modelType = request.query_params.get('model_type') if request.query_params.get('model_type') else 'RFR'
 
-    modelPreditionService = ModelPredictionService(independentVariables,modelType)
+    modelPreditionService = ModelPredictionService(request)
 
-    predictedPrice = modelPreditionService.predictPrice(request)
+    predictedPrice = modelPreditionService.predictPrice()
     prediction = {
-      "HotelCode": str(hotelCode), 
       "RecommendedPrice": predictedPrice
     }
     return Response(prediction)

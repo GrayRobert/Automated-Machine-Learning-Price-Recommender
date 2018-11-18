@@ -3,8 +3,8 @@
           <b-row>
             <b-col>
             <form enctype="multipart/form-data" novalidate>
-                <h1 v-if="isInitial || isSaving">Upload CSV File</h1>
-                <h1 v-if="isSuccess">Uploaded {{ uploadedFiles.length }} file(s) successfully.</h1>
+                <h1>Price Recommender Training</h1>
+                <h3 v-if="isSuccess">Uploaded {{ uploadedFiles.length }} file(s) successfully.</h3>
                 <div class="dropbox">
                 <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
                     accept="text/csv" class="input-file">
@@ -275,19 +275,15 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             // Update our view
             this.preProcessModal = false
             this.trainingInProgress = true
-            
-            // Remove value to predict
-            let modelFields = this.modelFields
-            modelFields.splice( modelFields.indexOf(this.predictField), 1 );
 
             // Build up our model training payload
             const formData = new FormData();
-            formData.append("encodecat", this.encodeCatFields)
-            formData.append("encodedate", this.encodeDateFields)
-            formData.append("drop", this.dropFields)
+                if (this.encodeCatFields) {formData.append("encodecat", this.encodeCatFields)}
+                if (this.encodeDateFields) {formData.append("encodedate", this.encodeDateFields)}
+                if (this.dropFields) {formData.append("drop", this.dropFields)}
             formData.append("predict", this.predictField)
             formData.append("model", this.model_select_train)
-            formData.append("variables", modelFields)
+            formData.append("variables", this.modelFields)
 
             // Send Request
             apiService.trainModel(formData).then((data) => {

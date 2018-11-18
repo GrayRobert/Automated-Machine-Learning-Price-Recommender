@@ -2,7 +2,7 @@
   <div class="animated fadeIn">
     <b-row>
       <b-col>
-              <TrainModel/>
+              <TrainModel />
       </b-col>
       <b-col>
         <b-card>
@@ -26,7 +26,7 @@
     </b-row>
         <b-row>
       <b-col>
-        <PredictModel/>
+        <PredictModel :history="history"/>
       </b-col>
       <b-col>
         <b-card header="Model Training History">
