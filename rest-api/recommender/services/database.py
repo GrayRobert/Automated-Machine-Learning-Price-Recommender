@@ -7,7 +7,7 @@ class DatabaseStorageController():
         # Empty Constructor
         self.userID = userID
 
-    def storeTrainedModel(self, independentVariables, dependentVariable, encodeCatList, encodeDateList, dropList, dummies, modelType, accuracyR2, accuracyRMSE, testJSON):
+    def storeTrainedModel(self, independentVariables, dependentVariable, encodeCatList, encodeDateList, dropList, dummies, modelType, accuracyR2, accuracyRMSE, testJSON, scatterPlot):
         # do something
         model = ModelTraining(
             independent_variables = independentVariables,
@@ -20,7 +20,8 @@ class DatabaseStorageController():
             user_id = self.userID,
             accuracy_r2 = accuracyR2,
             accuracy_rmse = accuracyRMSE,
-            test_json = testJSON
+            test_json = testJSON,
+            scatter_plot = scatterPlot
         )
 
         result = model.save()

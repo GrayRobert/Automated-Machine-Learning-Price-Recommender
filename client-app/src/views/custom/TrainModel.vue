@@ -3,7 +3,7 @@
           <b-row>
             <b-col>
             <form enctype="multipart/form-data" novalidate>
-                <h1>Price Recommender Training</h1>
+                <h2>Price Recommender Training</h2>
                 <h3 v-if="isSuccess">Uploaded {{ uploadedFiles.length }} file(s) successfully.</h3>
                 <div class="dropbox">
                 <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
@@ -132,8 +132,11 @@
                         <b-form-radio-group id="model_select_train"
                         :plain="true"
                         :options="[
+                            {text: 'Decission Tree ',value: 'DTR'},
+                            {text: 'Extra Trees ',value: 'EXT'},
                             {text: 'Random Forrest ',value: 'RFR'},
-                            {text: 'Xtra Trees ',value: 'EXT'},
+                            {text: 'Support Vector (TPOT)',value: 'SVR'},
+                            {text: 'AutoML (TPOT) ',value: 'TPOT'},
                         ]"
                         :checked="2" v-model="model_select_train">
                         </b-form-radio-group>

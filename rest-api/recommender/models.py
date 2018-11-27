@@ -14,3 +14,4 @@ class ModelTraining(models.Model):
     accuracy_rmse = models.FloatField(null=True, blank=True)
     model_file = models.TextField(null=True, blank=True)
     test_json = models.TextField(null=True, blank=True)
+    scatter_plot = models.TextField(null=True, blank=True)

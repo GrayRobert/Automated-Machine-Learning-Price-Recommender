@@ -13,7 +13,9 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueCurrencyFilter from 'vue-currency-filter'
 
-
+import LoadScript from 'vue-plugin-load-script';
+ 
+Vue.use(LoadScript);
 // todo
 // cssVars()
 

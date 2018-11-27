@@ -2,7 +2,8 @@ from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
+from math import sqrt
 from scipy.stats import spearmanr, pearsonr
 from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
 from xgboost import XGBRegressor
@@ -10,10 +11,15 @@ from copy import copy
 from sklearn.pipeline import make_pipeline, make_union
 from tpot.builtins import StackingEstimator
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import SVR
+from sklearn.svm import LinearSVR
+from tpot import TPOTRegressor
 import os
 import json
 
 from recommender.services.database import DatabaseStorageController
+from recommender.services.scatterplot import ScatterPlotService
 
 # CONSTANTS
 FILES_FOLDER = 'files'
@@ -99,10 +105,10 @@ class ModelTrainingService():
 
         print("Training Model As: " + self.modelType + "\n")
 
-        # ## Random Forrest Regressor
+        # Random Forrest Regressor
         if(self.modelType == 'RFR'):
             model = RandomForestRegressor(n_estimators=2000, min_samples_split=5, min_samples_leaf=1, max_features='log2',max_depth=178, bootstrap= True)
-        # ## Extra Trees Regressor
+        # Extra Trees Regressor Ensemble
         if(self.modelType == 'EXT'):
             model = make_pipeline(
                 make_union(
@@ -112,25 +118,60 @@ class ModelTrainingService():
                 StackingEstimator(estimator=XGBRegressor(learning_rate=0.1, max_depth=5, min_child_weight=6, n_estimators=100, nthread=1, subsample=0.7000000000000001)),
                 ExtraTreesRegressor(bootstrap=False, max_features=0.35000000000000003, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
             )
+        # Decission Tree Regressor
+        if (self.modelType == 'DTR'):
+            model = DecisionTreeRegressor(random_state=42)
+        # Support Vector Regressor
+        if (self.modelType == 'SVR'):
+            tpot_config = { 'sklearn.svm.SVR': {},
+                            'sklearn.svm.LinearSVR': {}, 
+                          }
+            model = TPOTRegressor(  generations=5, 
+                                    population_size=50,
+                                    max_time_mins = 5,
+                                    verbosity=2,
+                                    n_jobs = 1,
+                                    config_dict=tpot_config)
+        # Trying AutoML
+        if(self.modelType == 'TPOT'):
+            model = TPOTRegressor(  scoring='r2', 
+                                    max_time_mins = 60, 
+                                    n_jobs = 1,
+                                    verbosity = 2,
+                                    cv = 5,
+                                    generations=5, 
+                                    population_size=50, 
+                                    random_state=42, 
+                                    warm_start=True
+                                 )
         model.fit(X_train, y_train)
         predicted_test = model.predict(X_test)
         r2 = r2_score(y_test, predicted_test)
         spearman = spearmanr(y_test, predicted_test)
         pearson = pearsonr(y_test, predicted_test)
 
+        mse = mean_squared_error(y_test, predicted_test)
+        rmse = sqrt(mse)
+
         accuracy = {
             "R2": str(r2), 
             "Spearman": str(spearman),
-            "Pearson": str(pearson)
+            "Pearson": str(pearson),
+            "RMSE": str(rmse)
             }
 
         print("Accuracy is: " + str(accuracy))
 
         # Prepare some test data
         testJSON = testData.to_json(orient='records')
+
+        # Generate Scatter Plot
+        scatterplot = ScatterPlotService(y_test, predicted_test)
+        plot = scatterplot.getScatterPlot()
+
         # Store model training history
         database = DatabaseStorageController('UserID')
-        modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, 1.0, str(testJSON))
+        modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, rmse, str(testJSON), str(plot))
 
         modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
         print("Pickling Model...\n")

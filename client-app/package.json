@@ -57,6 +57,7 @@
     "https-proxy-agent": "^2.2.1",
     "node-sass": "^4.9.3",
     "sass-loader": "^7.1.0",
+    "vue-plugin-load-script": "^1.2.0",
     "vue-template-compiler": "^2.5.17"
   },
   "browserslist": [

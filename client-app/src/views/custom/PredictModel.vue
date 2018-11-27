@@ -2,11 +2,11 @@
     <b-card>
         <b-row>
         <b-col>
-            <h1>Price Recommendation</h1>
+            <h2>Price Recommendation</h2>
         </b-col>
         </b-row>
         <b-row>
-            <b-col sm="6">
+            <b-col>
                 <b-form-group>
                     <label>Select Previously Trained Model</label>
                     <b-form-select v-model="selectedModelId" :options="modelSelection" class="mb-3" />
@@ -14,8 +14,13 @@
             </b-col>
         </b-row>
         <b-row>
-            <b-col>
-                
+            <b-col sm="7">
+                <div class="mediumandgrey">Accuracy:</div>
+                <div class="bigandgreen">{{ selectedModel.accuracy_r2 | percentageFormatRound }}</div>
+            </b-col>
+            <b-col sm="5">
+                <div class="mediumandgrey">Error: +/-</div>
+                <div class="bigandorange"> {{ selectedModel.accuracy_rmse | currency }}</div>
             </b-col>
         </b-row>
         <div slot="footer">
@@ -53,6 +58,7 @@
                 {{ formData }}
             </b-row>
             <div slot="modal-footer">
+                    {{ model.id }}
                     <b-button type="submit" size="sm" variant="primary" v-on:click="getPrediction"><i class="fa fa-dot-circle-o"></i> Recommend Price</b-button>
                 </div>
         </b-modal>
@@ -65,6 +71,7 @@
     import moment from 'moment'
     import _ from 'lodash'
     import FormGenerator from './FormGenerator'
+    import numeral from 'numeral'
 
     import JQuery from 'jquery'
     let $ = JQuery
@@ -81,6 +88,10 @@
             history: {
                 type: Array,
                 required: true
+            },
+            model: {
+                type: Object,
+                required: false
             }
         },
         data: function() {
@@ -92,11 +103,12 @@
                     { value: null, text: 'Please select a model' },
                 ],
                 selectedModelId: null,
+                selectedModel: {},
                 models: null,
                 formData: {},
                 schema: [
                     
-                ]
+                ],
             };
         },
         computed: {
@@ -104,6 +116,14 @@
             findModel: function() {
                 const model = _.find(this.models, { 'id': this.selectedModelId }) || ''
                 return model
+            },
+        },
+        filters: {
+            percentageFormatRound: function(value) {
+            return numeral(value).format('0%')
+            },
+            formatRound: function(value) {
+            return numeral(value).format('0.00')
             },
         },
         methods: {
@@ -134,6 +154,7 @@
             },
             parseModel(){
                 const model = _.find(this.history, { 'id': this.selectedModelId })
+                this.selectedModel = model
                 const modelArray = JSON.parse(model.test_json)
                 this.formData = modelArray[0]
                 this.formData.model_id = this.selectedModelId
@@ -163,6 +184,8 @@
                     }
                     
                     this.schema.push(inputField)
+
+                    this.$emit("changeSelectedModelId", this.selectedModelId)
                 }
 
 
@@ -175,18 +198,51 @@
         },
         watch: { 
             'selectedModelId': function() {
-                console.log('Watched selectedModelId')
                 this.parseModel()
             },
             'history': function() {
-                console.log('Watched history')
                 this.getModelTrainingHistory()
-            }
+            },
+            'model': function() {
+                console.log("model watched")
+                this.selectedModelId = this.model.id
+            },
         }
 
     }
 </script>
 
 <style>
-
+    div.bigandgreen { 
+            color: green; 
+            font-family: 'Helvetica Neue', sans-serif; 
+            font-size: 175px; 
+            font-weight: bold; 
+            letter-spacing: -1px; 
+            line-height: 1; 
+            padding: 10px 0;
+            margin-left:60px;
+        }
+    div.bigandorange { 
+            color: orangered; 
+            font-family: 'Helvetica Neue', sans-serif; 
+            font-size: 75px; 
+            font-weight: bold; 
+            letter-spacing: -1px; 
+            line-height: 1; 
+            padding: 10px 0;
+            margin-left:40px;
+        }
+    div.mediumandgrey { 
+            color: darkslategrey; 
+            font-family: 'Helvetica Neue', sans-serif; 
+            font-size: 25px; 
+            font-weight: bold; 
+            letter-spacing: -1px; 
+            line-height: 1; 
+            vertical-align: top;
+            display: inline-block;
+            text-align: center;
+            margin-left:20px;
+        }
 </style>

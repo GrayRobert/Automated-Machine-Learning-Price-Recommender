@@ -14,6 +14,5 @@ class FileDeleteService():
 
     def deleteFile(self, file):
         
-        # Note file is currently always overwriting
         print("Deleting File: " + str(file))
         default_storage.delete(file)
