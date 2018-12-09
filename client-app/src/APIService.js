@@ -1,5 +1,5 @@
 import axios from 'axios'
-const API_URL = 'http://localhost:8000'
+const API_URL = 'http://localhost:8000/api/v1'
 export class APIService{
 
     constructor(){
@@ -46,6 +46,33 @@ export class APIService{
         return axios.delete(url)
         // get data
         .then(response => response.data);
+    }
+
+    loginUser(formData) {
+        const url = `${API_URL}/rest-auth/login/`;
+
+        return axios.post(url, formData)
+        // get data
+        .then(response => response.data)
+        .catch(error => error.response.data)
+    }
+
+    logoutUser(formData) {
+        const url = `${API_URL}/rest-auth/logout/`;
+
+        return axios.post(url, formData)
+        // get data
+        .then(response => response.data)
+        .catch(error => error.response.data)
+    }
+
+    resetPassword(formData) {
+        const url = `${API_URL}/rest-auth/password/reset/`;
+
+        return axios.post(url, formData)
+        // get data
+        .then(response => response.data)
+        .catch(error => error.response.data)
     }
 
 }

@@ -15,6 +15,11 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
 from sklearn.svm import LinearSVR
 from tpot import TPOTRegressor
+from scipy.stats import spearmanr, pearsonr
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import RandomizedSearchCV
+import autosklearn.regression
+from sklearn.preprocessing import OneHotEncoder
 import os
 import json
 
@@ -132,7 +137,7 @@ class ModelTrainingService():
                                     verbosity=2,
                                     n_jobs = 1,
                                     config_dict=tpot_config)
-        # Trying AutoML
+        # Try AutoML with TPOT
         if(self.modelType == 'TPOT'):
             model = TPOTRegressor(  scoring='r2', 
                                     max_time_mins = 60, 
@@ -144,6 +149,14 @@ class ModelTrainingService():
                                     random_state=42, 
                                     warm_start=True
                                  )
+        # Try AutoML with AUTO-SKLEAN
+        if(self.modelType == 'AUTOSK'):
+            model = autosklearn.regression.AutoSklearnRegressor(
+                time_left_for_this_task=3600,
+                per_run_time_limit=3600,
+                tmp_folder='/tmp/',
+                output_folder='/tmp/out',
+            )
         model.fit(X_train, y_train)
         predicted_test = model.predict(X_test)
         r2 = r2_score(y_test, predicted_test)

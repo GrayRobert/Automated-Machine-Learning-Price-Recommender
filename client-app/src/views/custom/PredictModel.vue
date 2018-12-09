@@ -216,7 +216,7 @@
     div.bigandgreen { 
             color: green; 
             font-family: 'Helvetica Neue', sans-serif; 
-            font-size: 175px; 
+            font-size: 125px; 
             font-weight: bold; 
             letter-spacing: -1px; 
             line-height: 1; 
@@ -226,7 +226,7 @@
     div.bigandorange { 
             color: orangered; 
             font-family: 'Helvetica Neue', sans-serif; 
-            font-size: 75px; 
+            font-size: 55px; 
             font-weight: bold; 
             letter-spacing: -1px; 
             line-height: 1; 

@@ -1,4 +1,6 @@
-Note this is so far just a django shell of a project to get a basic API up before pluggin in the machine learning model
+# Requirements
+*  Python 3.6+
+*  virtualenv python module
 
 # Load the Python Virtual Environment
 source venv/bin/activate

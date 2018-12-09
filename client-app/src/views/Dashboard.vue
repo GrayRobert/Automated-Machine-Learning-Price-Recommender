@@ -53,11 +53,6 @@
         &nbsp;
       </b-col>
     </b-row>
-    <b-row>
-      <b-col>
-        <time-series :model="currentModel" />
-      </b-col>
-    </b-row>
   </div>
 </template>
 
@@ -100,7 +95,10 @@ export default {
       currentPage: 1,
       perPage: 5,
       totalRows: 0,
-      currentModel: {}
+      currentModel: {},
+      isAuthenticated: false,
+      token: '',
+      username: '',
     }
   },
   computed: {
@@ -140,6 +138,13 @@ export default {
   },
   mounted () {
     //this.getPrediction()
+    this.token = this.$cookies.get("token")
+    this.username = this.$cookies.get("username")
+    if(!this.token) {
+          this.$router.push('/pages/login')
+    } else {
+      this.isAuthenticated = true;
+    }
     this.getModelTrainingHistory()
   },
   watch: { 

@@ -12,17 +12,16 @@ import VueD3 from 'vue2-d3'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueCurrencyFilter from 'vue-currency-filter'
-
 import LoadScript from 'vue-plugin-load-script';
- 
-Vue.use(LoadScript);
-// todo
-// cssVars()
+import VueCookies from 'vue-cookies'
 
+
+// Global modules
+Vue.use(LoadScript);
 Vue.use(BootstrapVue)
 Vue.use(VueD3)
 Vue.use(VueAxios, axios)
-
+Vue.use(VueCookies)
 Vue.use(VueCurrencyFilter,
   {
     symbol : '€',

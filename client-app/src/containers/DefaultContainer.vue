@@ -4,7 +4,7 @@
       <SidebarToggler class="d-lg-none" mobile />
       <SidebarToggler class="d-md-down-none" />
       <b-navbar-nav class="ml-auto">
-        <DefaultHeaderDropdownAccnt/>
+        <user-panel/>
       </b-navbar-nav>
     </AppHeader>
     <div class="app-body">
@@ -36,7 +36,7 @@
 <script>
 import nav from '@/_nav'
 import { Header as AppHeader, SidebarToggler, Sidebar as AppSidebar, SidebarFooter, SidebarForm, SidebarHeader, SidebarMinimizer, SidebarNav, Aside as AppAside, AsideToggler, Footer as TheFooter, Breadcrumb } from '@coreui/vue'
-import DefaultHeaderDropdownAccnt from './DefaultHeaderDropdownAccnt'
+import UserPanel from '../views/custom/UserPanel'
 
 export default {
   name: 'full',
@@ -47,7 +47,7 @@ export default {
     AppAside,
     TheFooter,
     Breadcrumb,
-    DefaultHeaderDropdownAccnt,
+    UserPanel,
     SidebarForm,
     SidebarFooter,
     SidebarToggler,

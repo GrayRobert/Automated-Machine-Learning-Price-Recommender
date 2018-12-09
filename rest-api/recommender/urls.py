@@ -10,6 +10,7 @@ router.register(r'model/traininghistory', ModelTrainingHistoryViewSet)
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'^rest-auth/', include('rest_auth.urls')), # provides login and logout with tokens
     url(r'^file/upload/(?P<filename>[^/]+)$', FileUploadView.as_view()),
     url(r'^model/delete/(?P<modelid>[^/]+)$', DeleteModelView.as_view()),
     url(r'^model/train', TrainModelView.as_view()),

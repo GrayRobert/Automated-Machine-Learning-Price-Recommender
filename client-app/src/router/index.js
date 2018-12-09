@@ -8,6 +8,7 @@ const DefaultContainer = () => import('@/containers/DefaultContainer')
 const Dashboard = () => import('@/views/Dashboard')
 const Login = () => import('@/views/pages/Login')
 const Register = () => import('@/views/pages/Register')
+const ForgotPassword = () => import('@/views/pages/ForgotPassword')
 
 // Error Pages
 const Page404 = () => import('@/views/pages/Page404')
@@ -83,6 +84,11 @@ export default new Router({
           path: 'register',
           name: 'Register',
           component: Register
+        },
+        {
+          path: 'forgotpassword',
+          name: 'Forgot Password',
+          component: ForgotPassword
         }
       ]
     }

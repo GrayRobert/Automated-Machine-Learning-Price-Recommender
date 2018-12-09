@@ -136,7 +136,8 @@
                             {text: 'Extra Trees ',value: 'EXT'},
                             {text: 'Random Forrest ',value: 'RFR'},
                             {text: 'Support Vector (TPOT)',value: 'SVR'},
-                            {text: 'AutoML (TPOT) ',value: 'TPOT'},
+                            {text: 'AutoML (TPOT 1HR) ',value: 'TPOT'},
+                            {text: 'AutoML (AUTO-SKLEARN 1HR) ',value: 'AUTOSK'},
                         ]"
                         :checked="2" v-model="model_select_train">
                         </b-form-radio-group>
