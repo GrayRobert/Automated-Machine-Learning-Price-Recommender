@@ -18,7 +18,7 @@ from tpot import TPOTRegressor
 from scipy.stats import spearmanr, pearsonr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
-import autosklearn.regression
+# import autosklearn.regression
 from sklearn.preprocessing import OneHotEncoder
 import os
 import json
@@ -150,13 +150,13 @@ class ModelTrainingService():
                                     warm_start=True
                                  )
         # Try AutoML with AUTO-SKLEAN
-        if(self.modelType == 'AUTOSK'):
+        """if(self.modelType == 'AUTOSK'):
             model = autosklearn.regression.AutoSklearnRegressor(
                 time_left_for_this_task=3600,
                 per_run_time_limit=3600,
                 tmp_folder='/tmp/',
                 output_folder='/tmp/out',
-            )
+            )"""
         model.fit(X_train, y_train)
         predicted_test = model.predict(X_test)
         r2 = r2_score(y_test, predicted_test)

@@ -172,7 +172,6 @@
 </template>
 
 <script>
-import * as d3 from 'd3';
 import { APIService } from '../../APIService'
 import { AtomSpinner } from 'epic-spinners'
 import Papa from 'papaparse'

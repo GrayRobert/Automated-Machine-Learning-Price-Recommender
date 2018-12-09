@@ -1,33 +1,63 @@
-# Requirements  
+
+
+
+
+# Server (Django Rest-API)
+
+## Requirements
 *  Python 3.6
 *  virtualenv python module (https://virtualenv.pypa.io/en/latest/installation/)
 *  Linux or Unix based development system (Linux Recommended)
 
-# Create a Python Virtual Environment
+## Create a Python Virtual Environment
 From the project root directory
- 
+
     # virtualenv venv
 
-# Activate Python Virtual Environment  
+## Activate Python Virtual Environment  
     # source venv/bin/activate
 
-# Install dependencies
+## Install dependencies
+    # pip install -r rest-api/requirements.txt 
+
+## Make Migrations  
+From the rest-api directory
+
+    # cd rest-api
+    # python manage.py makemigrations recommender
+    # python manage.py migrate
+
+## Create Rest-API Superuser  
+From the rest-api directory
+
+    # cd rest-api
+    # python manage.py createsuperuser
+    # user: admin, pass: admin123$
+
+## Run the Rest-API Server
+
+    # python manage.py runserver
+* From a web browser navigate to http://localhost:8000/admin/ and verify the Rest-API Server is running and that you can log in.
+* From a web browser navigate to http://localhost:8000/api/v1/rest-auth/login/ and verify that the Rest-API Server login page endpoint shows.
 
 
-# Run the API
-cd to src directory
-python manage.py runserver
+# Client (VueJS Web Application)
 
-# Database ORM
-Django has some object relational model features so we can persist our models into a database with schemas
+## Requirements
+*  NodeJS 
+*  NPM
 
-## Generate the schemas
-python manage.py makemigrations recommender
+## Install dependencies with npm
+From the client-app directory install dependencies
 
-## Persist the schemas
-python manage.py migrate
+    # cd client-app
+    # npm install
 
+## Run Client Application
 
+    # npm run serve
+
+From a web browser navigate to 
 
 
 
