@@ -1,13 +1,14 @@
-
-
-
-
 # Server (Django Rest-API)
 
-## Requirements
+## System Requirements
 *  Python 3.6
 *  virtualenv python module (https://virtualenv.pypa.io/en/latest/installation/)
-*  Linux or Unix based development system (Linux Recommended)
+*  Linux or Unix based development system (Linux Recommended, MacOS support is limited)
+*  Docker
+*  Docker Compose
+
+## Important Note!
+In /recommender/services/train.py AutoML frameworks TPOT and AUTO-SKLEARN might not run properly in non-linux environments. So they can be commented out in the source code for running locally in development outside of a docker container. AUTO-SKLEARN is commented out by default as it will not install on my development environment of MacOS. You might also need to comment out TPOT and not use these models locally. The production docker image allows you to work around these limitations.
 
 ## Create a Python Virtual Environment
 From the project root directory
@@ -37,6 +38,7 @@ From the rest-api directory
 ## Run the Rest-API Server
 
     # python manage.py runserver
+
 * From a web browser navigate to http://localhost:8000/admin/ and verify the Rest-API Server is running and that you can log in.
 * From a web browser navigate to http://localhost:8000/api/v1/rest-auth/login/ and verify that the Rest-API Server login page endpoint shows.
 
@@ -57,30 +59,48 @@ From the client-app directory install dependencies
 
     # npm run serve
 
-From a web browser navigate to 
+From a web browser navigate to http://localhost:8080 and login with superuser credentials. Alternatively navigate to http://localhost:8000/admin/ and setup new credentials.
 
 
+# Docker Builds
 
-#### Build the base docker image
+## Requirements
+*  Linux/Unix
+*  Docker
+*  NodeJS
+*  NPM
+*  Python 3.6
+
+## Build the base docker image
+From the root directory:
+
+    --Build the iamge
+    # docker build -t grayrobert/price-recommender-base -f docker/base/Dockerfile .
+
+    --Check the image is there
+    # docker images
+
+    --Check node version
+    # docker run --rm grayrobert/price-recommender-base node -v
+
+    --Check npm version
+    # docker run --rm grayrobert/price-recommender-base npm -v
+
+After running docker images you should have a new base ubuntu image
+
+## Build the production docker image from the base docker image
+Note: during docker build the training service python file train.production.py replaces the default train.py and enables TPOT and AUTO-SKLEARN models mentioned earlier.
+
 From the root directory:  
-*  Run docker build -t grayrobert/google-sheets-image-base -f docker/Dockerfile .
 
-#### Build the development docker image from the base docker image
-From the root directory:  
-*  Run docker build -t grayrobert/google-sheets-image-dev -f docker/dev/Dockerfile .
+    # docker build -t grayrobert/price-recommender-server-production -f docker/server/production/Dockerfile .
 
-#### Run the application in the docker image
-For example:  
-*  docker run --rm grayrobert/google-sheets-image-dev -g ResortTransferData001 -s transfer_planner_query_v4_winter.sql -t "tab"
+    --You can run the image and jump a bash prompt using the following command
+    # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server-production
 
-#### Production
-For the moment i'm just going to dump the image onto the nagios server and schedule in cron, but a CICD type pipeline in jenkins would be the best way forward if many changes are required.
+## To Run the application in production use docker-compose
+From the root directory:
 
-#### Build the production docker image from the base docker image
-From the root directory:    
-*  docker build -t grayrobert/google-sheets-image-prod -f docker/prod/Dockerfile .
+    # docker-compose --file docker/server/production/docker-compose.yml up --build
 
-From the root directory, save docker image:  
-*  docker save -o target/google-sheets-docker-prod-2018-12-06.tar grayrobert/google-sheets-image-prod:latest  
-*  copy over to server (currently krusty)  
-*  load the image #docker load < google-sheets-docker-prod-2018-12-06.tar  
+

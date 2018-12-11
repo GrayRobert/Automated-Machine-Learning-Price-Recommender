@@ -18,7 +18,7 @@ from tpot import TPOTRegressor
 from scipy.stats import spearmanr, pearsonr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
-# import autosklearn.regression
+import autosklearn.regression
 from sklearn.preprocessing import OneHotEncoder
 import os
 import json
@@ -126,17 +126,15 @@ class ModelTrainingService():
         # Decission Tree Regressor
         if (self.modelType == 'DTR'):
             model = DecisionTreeRegressor(random_state=42)
-        if (self.modelType == 'SVR' or self.modelType == 'TPOT' or self.modelType == 'AUTOSK'):
-            print("Model Type " + self.modelType + " is not supported in development without using docker. See readme.MD")
-        """
         # Support Vector Regressor
         if (self.modelType == 'SVR'):
             tpot_config = { 'sklearn.svm.SVR': {},
                             'sklearn.svm.LinearSVR': {}, 
                           }
-            model = TPOTRegressor(  generations=5, 
+            model = TPOTRegressor(  generations=50, 
                                     population_size=50,
-                                    max_time_mins = 5,
+                                    max_time_mins = 60,
+                                    cv = 5,
                                     verbosity=2,
                                     n_jobs = -1,
                                     config_dict=tpot_config)
@@ -147,19 +145,17 @@ class ModelTrainingService():
                                     n_jobs = -1,
                                     verbosity = 2,
                                     cv = 5,
-                                    generations=5, 
+                                    generations=50, 
                                     population_size=50, 
                                     random_state=42, 
-                                    warm_start=True
+                                    config_dict='TPOT light'
                                  )
         # Try AutoML with AUTO-SKLEAN
         if(self.modelType == 'AUTOSK'):
             model = autosklearn.regression.AutoSklearnRegressor(
                 time_left_for_this_task=3600,
                 per_run_time_limit=3600,
-                tmp_folder='/tmp/',
-                output_folder='/tmp/out',
-            )"""
+            )
         model.fit(X_train, y_train)
         predicted_test = model.predict(X_test)
         r2 = r2_score(y_test, predicted_test)
@@ -191,7 +187,12 @@ class ModelTrainingService():
 
         modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
         print("Pickling Model...\n")
-        joblib.dump(model, modelFile)
+
+        # For TPOT we can't pickle the entire model
+        if (self.modelType == 'TPOT' or self.modelType == 'SVR'):
+            joblib.dump(model.fitted_pipeline_, modelFile)
+        else:
+            joblib.dump(model, modelFile)
 
         database.updateModelFile(modelID, modelFile)
 

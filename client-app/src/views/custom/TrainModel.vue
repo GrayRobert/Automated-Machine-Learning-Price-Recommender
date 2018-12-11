@@ -135,9 +135,9 @@
                             {text: 'Decission Tree ',value: 'DTR'},
                             {text: 'Extra Trees ',value: 'EXT'},
                             {text: 'Random Forrest ',value: 'RFR'},
-                            {text: 'Support Vector (TPOT)',value: 'SVR'},
-                            {text: 'AutoML (TPOT 1HR) ',value: 'TPOT'},
-                            {text: 'AutoML (AUTO-SKLEARN 1HR) ',value: 'AUTOSK'},
+                            {text: 'Support Vector (AutoML 1HR)',value: 'SVR'},
+                            {text: 'TPOT (AutoML 1HR) ',value: 'TPOT'},
+                            {text: 'AUTO-SKLEARN (AutoML 1HR) ',value: 'AUTOSK'},
                         ]"
                         :checked="2" v-model="model_select_train">
                         </b-form-radio-group>
