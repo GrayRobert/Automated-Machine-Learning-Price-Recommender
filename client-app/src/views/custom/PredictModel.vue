@@ -14,13 +14,13 @@
             </b-col>
         </b-row>
         <b-row>
-            <b-col sm="7">
+            <b-col sm="6">
                 <div class="mediumandgrey">Accuracy:</div>
                 <div class="bigandgreen">{{ selectedModel.accuracy_r2 | percentageFormatRound }}</div>
             </b-col>
-            <b-col sm="5">
+            <b-col sm="6">
                 <div class="mediumandgrey">Error: +/-</div>
-                <div class="bigandorange"> {{ selectedModel.accuracy_rmse | currency }}</div>
+                <div class="bigandorange"> {{ selectedModel.accuracy_rmse | formatRound }}</div>
             </b-col>
         </b-row>
         <div slot="footer">
@@ -43,7 +43,7 @@
                     <span class="predicting-text">Recommending in progress...</span>
                 </b-col>
             </b-row>
-            <div v-if="results !== null">Price Recommended: {{ results.RecommendedPrice[0] | currency}}</div>
+            <div v-if="results !== null">Price Recommended: {{ results.RecommendedPrice[0] | formatRound}}</div>
             </b-col>
         </b-row>
         </div>

@@ -53,7 +53,7 @@
                             <span class="training-text">Training in progress...</span>
                         </b-col>
                     </b-row>
-                    <div id="accuracy"><span v-if="accuracy !== null">Accuracy: {{ accuracy.R2 }}</span></div>
+                    <div id="accuracy"><span v-if="accuracy && accuracy.R2 != null">Accuracy: {{ accuracy.R2 }}</span><span class="error" v-if="accuracy && accuracy.error != null">Error: {{ accuracy.error }}</span></div>
                 </b-col>
             </b-row>
           </div>
@@ -110,15 +110,21 @@
                     <b-col>
                         <b-form-group
                             label="Select field to predict"
-                            label-for="predictField"
-                            :label-cols="3"
-                            :horizontal="true">
-                            <b-form-select id="predictField"
-                            :plain="true"
+                            label-for="predictField">
+                            <b-form-select v-model="predictField"
                             :options="fieldOptions"
-                            value="Please select"
-                            v-model="predictField">
-                            </b-form-select>
+                            id="predictField" class="mb-3" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col>
+                        <b-form-group
+                        label="Select Transformation (Currently Log10 only)"
+                        label-for="transformation">
+                            <b-form-select v-model="transformation" 
+                            :options="transformationOptions" 
+                            id="transformation" class="mb-3" />
                         </b-form-group>
                     </b-col>
                 </b-row>
@@ -135,13 +141,22 @@
                             {text: 'Decission Tree ',value: 'DTR'},
                             {text: 'Extra Trees ',value: 'EXT'},
                             {text: 'Random Forrest ',value: 'RFR'},
-                            {text: 'Support Vector (AutoML 1HR)',value: 'SVR'},
-                            {text: 'TPOT (AutoML 1HR) ',value: 'TPOT'},
-                            {text: 'AUTO-SKLEARN (AutoML 1HR) ',value: 'AUTOSK'},
+                            {text: 'Support Vector (AutoML)',value: 'SVR'},
+                            {text: 'TPOT (AutoML) ',value: 'TPOT'},
+                            {text: 'AUTO-SKLEARN (AutoML) ',value: 'AUTOSK'},
                         ]"
                         :checked="2" v-model="model_select_train">
                         </b-form-radio-group>
                     </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col>
+                        <b-form-group
+                        label="Select Max Allowed RunTime (For AutoML Only)"
+                        label-for="max_allowed_run_time">
+                            <b-form-select v-model="maxAllowedRunTime" :options="maxAllowedRunTimeOptions" id="max_allowed_run_time" class="mb-3" />
+                        </b-form-group>
                     </b-col>
                 </b-row>
                 <b-row>
@@ -200,7 +215,20 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             dropFields: [],
             predictField: null,
             categroicals: [],
-            targetVariable: null
+            targetVariable: null,
+            maxAllowedRunTime: 60,
+            maxAllowedRunTimeOptions: [
+                {text: 'None ',value: 0},
+                {text: '1 hr ',value: 60},
+                {text: '6 hrs ',value: 360},
+                {text: '12 hrs ',value: 720},
+                {text: '24 hrs',value: 1440},
+                ],
+            transformation: 'none',
+            transformationOptions: [
+                {text: 'none ', value: 'none'},
+                {text: 'log10 ', value: 'log10'}
+            ]
         };
     },
     computed: {
@@ -287,6 +315,8 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             formData.append("predict", this.predictField)
             formData.append("model", this.model_select_train)
             formData.append("variables", this.modelFields)
+            formData.append("runtime", this.maxAllowedRunTime)
+            formData.append("transformation", this.transformation)
 
             // Send Request
             apiService.trainModel(formData).then((data) => {
@@ -351,5 +381,8 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         color:#20a8d8;
         vertical-align: middle;
         display: inline-block;
+    }
+    .error {
+        color: red;
     }
 </style>

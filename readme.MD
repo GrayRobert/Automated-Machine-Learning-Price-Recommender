@@ -42,6 +42,10 @@ From the rest-api directory
 * From a web browser navigate to http://localhost:8000/admin/ and verify the Rest-API Server is running and that you can log in.
 * From a web browser navigate to http://localhost:8000/api/v1/rest-auth/login/ and verify that the Rest-API Server login page endpoint shows.
 
+If you get an error about the hypervolume module, reinstall deep with the following command
+
+    # pip install deap==1.0.2.post2
+
 
 # Client (VueJS Web Application)
 
