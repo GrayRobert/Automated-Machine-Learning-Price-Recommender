@@ -19,7 +19,7 @@ class ScatterPlotService():
         p = figure(tools=TOOLS, plot_width=500, 
                 plot_height=300)
 
-        p.scatter(x, y, radius=30,
+        p.scatter(x, y,
                 fill_color='#6666ff', fill_alpha=0.3,
                 line_color="#333399")
 

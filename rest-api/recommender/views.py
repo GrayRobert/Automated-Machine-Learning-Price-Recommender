@@ -50,6 +50,10 @@ class TrainModelView(views.APIView):
     dependentVariable = request.data['predict']
     print('Target Variable is: ' + dependentVariable)
 
+    # Do we want to do a transformation on dependent variable
+    transformation = request.data['transformation']
+    print('Transformation is: ' + transformation)
+
     # Get our variables to encode
     encodeCatList = request.data['encodecat'].split(',')
     print('Categorical variables to encode: ' + str(encodeCatList))
@@ -67,8 +71,13 @@ class TrainModelView(views.APIView):
       raise ParseError("Missing Model Type Selection")
     modelType = request.data['model']
 
+    # Get our max allowed runtime
+    maxAllowedRunTime = int(request.data['runtime']) or 60
+    if maxAllowedRunTime > 1140:
+      raise ParseError("Max Allowed Run Time is 24 hours")
+
     # Train the model and return the accuracy
-    model = ModelTrainingService(independentVariables, dependentVariable, encodeCatList, encodeDateList, dropList, modelType)
+    model = ModelTrainingService(independentVariables, dependentVariable, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime)
     accuracy = model.trainModel()
     return Response(accuracy)
 

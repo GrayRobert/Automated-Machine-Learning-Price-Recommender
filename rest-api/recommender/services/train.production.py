@@ -34,9 +34,10 @@ JOBLIB_EXTENTION = '.joblib'
 class ModelTrainingService():
 
     # CONSTRUCTOR
-    def __init__(self, independentVariables, dependentVariable, encodeCatList, encodeDateList, dropList, modelType):
+    def __init__(self, independentVariables, dependentVariable, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime):
         self.independentVariables = independentVariables
         self.dependentVariable = dependentVariable
+        self.transformation = transformation
         self.encodeCatList = encodeCatList
         self.encodeDateList = encodeDateList
         self.dropList = dropList
@@ -44,156 +45,176 @@ class ModelTrainingService():
         self.projectDir = os.getcwd()
         self.filesDir = os.path.join(self.projectDir, FILES_FOLDER)
         self.trainingData = os.path.join(self.filesDir, TRAINING_DATA)
+        self.maxAllowedRunTime = maxAllowedRunTime
 
     # TRAIN MODEL
     def trainModel(self):
         print("Reading CSV training data...\n")
         data = pd.read_csv(self.trainingData)
 
-        # Drop Fields
-        if len(self.dropList) > 0:
-            for dropField in self.dropList:
-                print("Field being dropped: " + dropField)
-                data.drop(dropField, axis=1, inplace=True, errors='ignore')
+        try:
+            # Drop Fields
+            if len(self.dropList) > 0:
+                for dropField in self.dropList:
+                    if dropField != '':
+                        print("Field being dropped: " + dropField)
+                        data.drop(dropField, axis=1, inplace=True, errors='ignore')
 
-        # We store one record as a sample JSON object that will later be used to consturct test prediction form based on the fields of the model
-        # This is because the model fields are dynamic and can vary from one trained model to another.
-        testData = data.head(1)
-        testData.drop(self.dependentVariable, axis=1, inplace=True)
-        processedFields = list(testData.columns[:])
+            # We store one record as a sample JSON object that will later be used to consturct test prediction form based on the fields of the model
+            # This is because the model fields are dynamic and can vary from one trained model to another.
+            testData = data.head(1)
+            testData.drop(self.dependentVariable, axis=1, inplace=True)
+            processedFields = list(testData.columns[:])
 
-        # Encode Date Fields. ToDo: provide encoding options, default is week of the year
-        if len(self.encodeDateList) > 0:
-            for dateField in self.encodeDateList:
-                print("Date Field encoded as week: " + str(dateField))
-                data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
+            # Encode Date Fields. ToDo: provide encoding options, default is week of the year
+            if len(self.encodeDateList) > 0:
+                for dateField in self.encodeDateList:
+                    if dateField != '':
+                        print("Date Field encoded as week: " + str(dateField))
+                        data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
 
-        # Encode Categorical Fields
-        if len(self.encodeCatList) > 0:
-            for catField in self.encodeCatList:
-                if catField != '':
-                    print("Field being enocded as dummy: " + catField)
-                    data[catField] = data[catField].astype('category')
+            # Encode Categorical Fields
+            if len(self.encodeCatList) > 0:
+                for catField in self.encodeCatList:
+                    if catField != '':
+                        print("Field being enocded as dummy: " + catField)
+                        data[catField] = data[catField].astype('category')
 
-        # Encode Dummies For All Categorical Data
-        if self.encodeCatList[0] != '':
-            data=pd.get_dummies(data, prefix_sep="__", columns=self.encodeCatList)
+            # Encode Dummies For All Categorical Data
+            if self.encodeCatList[0] != '':
+                data=pd.get_dummies(data, prefix_sep="__", columns=self.encodeCatList)
 
-        ## Put in zeros for any nulls
-        data.fillna(inplace=True, value=0)
+            ## Put in zeros for any nulls
+            data.fillna(inplace=True, value=0)
 
-        # Re-Index
-        data.index = range(len(data))
+            # Re-Index
+            data.index = range(len(data))
 
-        # Store dummies and processed columns for later
-        dummies = [col for col in data 
-            if "__" in col 
-            and col.split("__")[0] in self.encodeCatList]
-        print("Dummies: " + str(dummies))
+            # Store dummies and processed columns for later
+            dummies = [col for col in data 
+                if "__" in col 
+                and col.split("__")[0] in self.encodeCatList]
+            #print("Dummies: " + str(dummies))
 
-        # Show data
-        print(data.head())
+            # Transformations - Note currently limited to log10
+            if self.transformation == 'log10':
+                data[self.dependentVariable] = np.log10(data[self.dependentVariable])
 
-        # Set predictor/target variable
-        y=np.array(data[self.dependentVariable])
+            # Show data
+            print(data.head())
 
-        # Drop the target variable and create a numpy array of dataframe
-        data.drop(self.dependentVariable, axis=1, inplace=True)
-        X=np.array(data)
+            # Set predictor/target variable
+            y=np.array(data[self.dependentVariable])
 
-
-        # ## Split data into training and test sets
-        print("Train/Test Split...\n")
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,y, test_size=0.20, random_state=42)
+            # Drop the target variable and create a numpy array of dataframe
+            data.drop(self.dependentVariable, axis=1, inplace=True)
+            X=np.array(data)
 
 
-        print("Training Model As: " + self.modelType + "\n")
+            # ## Split data into training and test sets
+            print("Train/Test Split...\n")
+            X_train, X_test, y_train, y_test = train_test_split(
+                X,y, test_size=0.20, random_state=42)
 
-        # Random Forrest Regressor
-        if(self.modelType == 'RFR'):
-            model = RandomForestRegressor(n_estimators=2000, min_samples_split=5, min_samples_leaf=1, max_features='log2',max_depth=178, bootstrap= True)
-        # Extra Trees Regressor Ensemble
-        if(self.modelType == 'EXT'):
-            model = make_pipeline(
-                make_union(
-                    FunctionTransformer(copy),
-                    FunctionTransformer(copy)
-                ),
-                StackingEstimator(estimator=XGBRegressor(learning_rate=0.1, max_depth=5, min_child_weight=6, n_estimators=100, nthread=1, subsample=0.7000000000000001)),
-                ExtraTreesRegressor(bootstrap=False, max_features=0.35000000000000003, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
-            )
-        # Decission Tree Regressor
-        if (self.modelType == 'DTR'):
-            model = DecisionTreeRegressor(random_state=42)
-        # Support Vector Regressor
-        if (self.modelType == 'SVR'):
-            tpot_config = { 'sklearn.svm.SVR': {},
-                            'sklearn.svm.LinearSVR': {}, 
-                          }
-            model = TPOTRegressor(  generations=50, 
-                                    population_size=50,
-                                    max_time_mins = 60,
-                                    cv = 5,
-                                    verbosity=2,
-                                    n_jobs = -1,
-                                    config_dict=tpot_config)
-        # Try AutoML with TPOT
-        if(self.modelType == 'TPOT'):
-            model = TPOTRegressor(  scoring='r2', 
-                                    max_time_mins = 60, 
-                                    n_jobs = -1,
-                                    verbosity = 2,
-                                    cv = 5,
-                                    generations=50, 
-                                    population_size=50, 
-                                    random_state=42, 
-                                    config_dict='TPOT light'
-                                 )
-        # Try AutoML with AUTO-SKLEAN
-        if(self.modelType == 'AUTOSK'):
-            model = autosklearn.regression.AutoSklearnRegressor(
-                time_left_for_this_task=3600,
-                per_run_time_limit=3600,
-            )
-        model.fit(X_train, y_train)
-        predicted_test = model.predict(X_test)
-        r2 = r2_score(y_test, predicted_test)
-        spearman = spearmanr(y_test, predicted_test)
-        pearson = pearsonr(y_test, predicted_test)
 
-        mse = mean_squared_error(y_test, predicted_test)
-        rmse = sqrt(mse)
+            print("Training Model As: " + self.modelType + "\n")
 
-        accuracy = {
-            "R2": str(r2), 
-            "Spearman": str(spearman),
-            "Pearson": str(pearson),
-            "RMSE": str(rmse)
-            }
+            # Random Forrest Regressor
+            if(self.modelType == 'RFR'):
+                model = RandomForestRegressor(n_estimators=2000, min_samples_split=5, min_samples_leaf=1, max_features='log2',max_depth=178, bootstrap= True)
+            # Extra Trees Regressor Ensemble
+            if(self.modelType == 'EXT'):
+                model = make_pipeline(
+                    make_union(
+                        FunctionTransformer(copy),
+                        FunctionTransformer(copy)
+                    ),
+                    StackingEstimator(estimator=XGBRegressor(learning_rate=0.1, max_depth=5, min_child_weight=6, n_estimators=100, nthread=1, subsample=0.7000000000000001)),
+                    ExtraTreesRegressor(bootstrap=False, max_features=0.35000000000000003, min_samples_leaf=2, min_samples_split=15, n_estimators=100)
+                )
+            # Decission Tree Regressor
+            if (self.modelType == 'DTR'):
+                model = DecisionTreeRegressor(random_state=42)
+            # Support Vector Regressor
+            if (self.modelType == 'SVR'):
+                tpot_config = { 'sklearn.svm.SVR': {},
+                                'sklearn.svm.LinearSVR': {}, 
+                            }
+                model = TPOTRegressor(  generations=50, 
+                                        population_size=50,
+                                        max_time_mins = self.maxAllowedRunTime,
+                                        cv = 5,
+                                        verbosity=2,
+                                        n_jobs = -1,
+                                        config_dict=tpot_config)
+            # Try AutoML with TPOT
+            if(self.modelType == 'TPOT'):
+                model = TPOTRegressor(  scoring='r2', 
+                                        max_time_mins = self.maxAllowedRunTime, 
+                                        n_jobs = -1,
+                                        verbosity = 2,
+                                        cv = 5,
+                                        generations=50, 
+                                        population_size=50, 
+                                        random_state=42, 
+                                        config_dict='TPOT light'
+                                    )
+            # Try AutoML with AUTO-SKLEAN
+            if(self.modelType == 'AUTOSK'):
+                model = autosklearn.regression.AutoSklearnRegressor(
+                    time_left_for_this_task=self.maxAllowedRunTime*60,
+                    per_run_time_limit=3600,
+                )
+            model.fit(X_train, y_train)
+            predicted_test = model.predict(X_test)
 
-        print("Accuracy is: " + str(accuracy))
+            # If the dependendent variable had a log transformation so we need to undo this to show the correct predicted price
+            if self.transformation == 'log10':
+                y_test = np.power(10,y_test)
+                predicted_test = np.power(10,predicted_test)
+            
+            r2 = r2_score(y_test, predicted_test)
+            spearman = spearmanr(y_test, predicted_test)
+            pearson = pearsonr(y_test, predicted_test)
 
-        # Prepare some test data
-        testJSON = testData.to_json(orient='records')
+            mse = mean_squared_error(y_test, predicted_test)
+            rmse = sqrt(mse)
 
-        # Generate Scatter Plot
-        scatterplot = ScatterPlotService(y_test, predicted_test)
-        plot = scatterplot.getScatterPlot()
+            accuracy = {
+                "R2": str(r2), 
+                "Spearman": str(spearman),
+                "Pearson": str(pearson),
+                "RMSE": str(rmse)
+                }
 
-        # Store model training history
-        database = DatabaseStorageController('UserID')
-        modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, rmse, str(testJSON), str(plot))
+            print("Accuracy is: " + str(accuracy))
 
-        modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
-        print("Pickling Model...\n")
+            # Prepare some test data
+            testJSON = testData.to_json(orient='records')
 
-        # For TPOT we can't pickle the entire model
-        if (self.modelType == 'TPOT' or self.modelType == 'SVR'):
-            joblib.dump(model.fitted_pipeline_, modelFile)
-        else:
-            joblib.dump(model, modelFile)
+            # Generate Scatter Plot
+            scatterplot = ScatterPlotService(y_test, predicted_test)
+            plot = scatterplot.getScatterPlot()
 
-        database.updateModelFile(modelID, modelFile)
+            # Store model training history
+            database = DatabaseStorageController('UserID')
+            modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.transformation), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, rmse, str(testJSON), str(plot))
+
+            modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
+            print("Pickling Model...\n")
+
+            # For TPOT we can't pickle the entire model
+            if (self.modelType == 'TPOT' or self.modelType == 'SVR'):
+                joblib.dump(model.fitted_pipeline_, modelFile)
+            else:
+                joblib.dump(model, modelFile)
+
+            database.updateModelFile(modelID, modelFile)
+
+        # Return the error in the response object
+        except Exception as error:
+            accuracy = {
+                "error": str(error)
+                }
 
         return accuracy
