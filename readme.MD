@@ -66,13 +66,11 @@ From the client-app directory install dependencies
 From a web browser navigate to http://localhost:8080 and login with superuser credentials. Alternatively navigate to http://localhost:8000/admin/ and setup new credentials.
 
 
-# Docker Builds
+# Docker Builds For Server
 
 ## Requirements
 *  Linux/Unix
 *  Docker
-*  NodeJS
-*  NPM
 *  Python 3.6
 
 ## Build the base docker image
@@ -81,18 +79,9 @@ From the root directory:
     --Build the iamge
     # docker build -t grayrobert/price-recommender-base -f docker/base/Dockerfile .
 
-    --Check the image is there
-    # docker images
-
-    --Check node version
-    # docker run --rm grayrobert/price-recommender-base node -v
-
-    --Check npm version
-    # docker run --rm grayrobert/price-recommender-base npm -v
-
 After running docker images you should have a new base ubuntu image
 
-## Build the production docker image from the base docker image
+## Build the production docker image from the base docker image (REST-API Server)
 Note: during docker build the training service python file train.production.py replaces the default train.py and enables TPOT and AUTO-SKLEARN models mentioned earlier.
 
 From the root directory:  
@@ -102,9 +91,35 @@ From the root directory:
     --You can run the image and jump a bash prompt using the following command
     # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server-production
 
-## To Run the application in production use docker-compose
+## To Run the application in production use docker-compose (REST-API Server)
 From the root directory:
 
     # docker-compose --file docker/server/production/docker-compose.yml up --build
 
 
+## Save the server docker image for deployment to production
+From the root directory:
+
+    # docker save -o target/price-recommender-server.tar grayrobert/price-recommender-server-production:latest
+
+# Docker Builds For Client
+
+## Requirements
+*  Linux/Unix
+*  Docker
+*  Node/NPM
+
+## Build the client docker image
+From the root directory:
+
+    --Build the iamge
+    # docker build -t grayrobert/price-recommender-client -f docker/client/Dockerfile .
+
+## Run the client docker image
+
+    # docker run -it -p 8080:8080 --rm grayrobert/price-recommender-client
+
+## Save the client docker image for deployment to production
+From the root directory:
+
+    # docker save -o target/price-recommender-client.tar grayrobert/price-recommender-client:latest
