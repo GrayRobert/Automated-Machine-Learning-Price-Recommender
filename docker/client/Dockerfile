@@ -1,7 +1,5 @@
-FROM node:11.4.0-alpine
-
-# install simple http server for serving static content
-RUN npm install -g http-server
+# build stage
+FROM node:11.4.0-alpine as build-stage
 
 # make the 'app' folder the current working directory
 WORKDIR /app
@@ -18,5 +16,10 @@ COPY client-app /app
 # build app for production with minification
 RUN npm run build
 
-EXPOSE 8080
-CMD [ "http-server", "dist" ]
+
+# production stage
+FROM nginx:1.13.12-alpine as production-stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+

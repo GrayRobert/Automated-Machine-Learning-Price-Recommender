@@ -82,7 +82,7 @@ class ModelPredictionService():
             print("undoing log...")
             predictedPrice = np.power(10,predictedPrice)
 
-        print(data.head())
+        #print(data.head())
         return predictedPrice
 
     def getModelDetails(self, modelId):

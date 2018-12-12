@@ -91,11 +91,6 @@ From the root directory:
     --You can run the image and jump a bash prompt using the following command
     # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server-production
 
-## To Run the application in production use docker-compose (REST-API Server)
-From the root directory:
-
-    # docker-compose --file docker/server/production/docker-compose.yml up --build
-
 
 ## Save the server docker image for deployment to production
 From the root directory:
@@ -123,3 +118,11 @@ From the root directory:
 From the root directory:
 
     # docker save -o target/price-recommender-client.tar grayrobert/price-recommender-client:latest
+
+
+# To Run the application in production
+Docker compose will orchestrate the starting of both the server and client, mapping ports and whatever other requirements are needed.
+From the root directory:
+
+    1. Run the save commands above to 
+    # docker-compose --file docker/server/production/docker-compose.yml up --build

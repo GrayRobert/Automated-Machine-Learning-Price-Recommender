@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  web:
+  server:
     build:
       context: ../../../
       dockerfile: docker/server/production/Dockerfile
@@ -10,4 +10,14 @@ services:
       - .:/price_recommender_server
     ports:
       - "8000:8000/tcp"
+    tty: true
+  client:
+    build:
+      context: ../../../
+      dockerfile: docker/client/Dockerfile
+    container_name: price_recommender_client
+    volumes:
+      - .:/price_recommender_client
+    ports:
+      - "80:80/tcp"
     tty: true

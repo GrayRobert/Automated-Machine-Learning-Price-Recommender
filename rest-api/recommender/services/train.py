@@ -143,10 +143,12 @@ class ModelTrainingService():
                 tpot_config = { 'sklearn.svm.SVR': {},
                                 'sklearn.svm.LinearSVR': {}, 
                             }
-                model = TPOTRegressor(  generations=5, 
+                model = TPOTRegressor(  generations=50, 
                                         population_size=50,
+                                        scoring='r2',
                                         max_time_mins = self.maxAllowedRunTime,
-                                        verbosity=2,
+                                        cv = 5,
+                                        verbosity=3,
                                         n_jobs = -1,
                                         config_dict=tpot_config)
             # Try AutoML with TPOT
@@ -154,12 +156,11 @@ class ModelTrainingService():
                 model = TPOTRegressor(  scoring='r2', 
                                         max_time_mins = self.maxAllowedRunTime, 
                                         n_jobs = -1,
-                                        verbosity = 2,
+                                        verbosity = 3,
                                         cv = 5,
-                                        generations=5, 
-                                        population_size=50, 
-                                        random_state=42, 
-                                        warm_start=True
+                                        generations=100, 
+                                        population_size=100, 
+                                        random_state=42
                                     )
             # Try AutoML with AUTO-SKLEAN
             if(self.modelType == 'AUTOSK'):
