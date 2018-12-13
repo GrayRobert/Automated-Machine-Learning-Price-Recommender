@@ -4,7 +4,7 @@
 *  Python 3.6
 *  virtualenv python module (https://virtualenv.pypa.io/en/latest/installation/)
 *  Linux or Unix based development system (Linux Recommended, MacOS support is limited)
-*  Docker
+*  Docker 18.00.0+
 *  Docker Compose
 
 ## Important Note!
@@ -79,6 +79,9 @@ From the root directory:
     --Build the iamge
     # docker build -t grayrobert/price-recommender-base -f docker/base/Dockerfile .
 
+    --Push to docker hub
+    # docker push grayrobert/price-recommender-base
+
 After running docker images you should have a new base ubuntu image
 
 ## Build the production docker image from the base docker image (REST-API Server)
@@ -86,16 +89,19 @@ Note: during docker build the training service python file train.production.py r
 
 From the root directory:  
 
-    # docker build -t grayrobert/price-recommender-server-production -f docker/server/production/Dockerfile .
+    # docker build -t grayrobert/price-recommender-server -f docker/server/production/Dockerfile .
 
     --You can run the image and jump a bash prompt using the following command
-    # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server-production
+    # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server
+
+    --Push to docker hub
+    # docker push grayrobert/price-recommender-server
 
 
 ## Save the server docker image for deployment to production
 From the root directory:
 
-    # docker save -o target/price-recommender-server.tar grayrobert/price-recommender-server-production:latest
+    # docker save -o target/price-recommender-server.tar grayrobert/price-recommender-server:latest
 
 # Docker Builds For Client
 
@@ -109,6 +115,9 @@ From the root directory:
 
     --Build the iamge
     # docker build -t grayrobert/price-recommender-client -f docker/client/Dockerfile .
+
+    --Push to docker hub
+    # docker push grayrobert/price-recommender-client
 
 ## Run the client docker image
 
