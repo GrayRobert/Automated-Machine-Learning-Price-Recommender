@@ -36,4 +36,3 @@ RUN chmod +x manage.py
 
 RUN rm /app/recommender/services/train.py
 RUN mv /app/recommender/services/train.production.py /app/recommender/services/train.py
-
