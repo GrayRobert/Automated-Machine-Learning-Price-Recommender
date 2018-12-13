@@ -18,6 +18,10 @@ pip3 install --no-index -f /build -r requirements.production.txt
 pip3 install auto-sklearn tpot
 
 # Run main.py
-python /app/manage.py makemigrations && python /app/manage.py migrate && python /app/manage.py runserver 0.0.0.0:8000
+python /app/manage.py makemigrations && python /app/manage.py migrate
 
+# Create Superuser
 echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'grayarobert@gmail.com', 'admin123$')" | ./manage.py shell
+
+# Start server
+python /app/manage.py runserver 0.0.0.0:8000
