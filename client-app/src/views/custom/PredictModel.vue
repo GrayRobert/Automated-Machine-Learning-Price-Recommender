@@ -183,6 +183,9 @@
                         }
                     }
                     
+                    // Clear the schema
+                    this.schema = []
+                    // Update fields to match model selection
                     this.schema.push(inputField)
 
                     this.$emit("changeSelectedModelId", this.selectedModelId)
