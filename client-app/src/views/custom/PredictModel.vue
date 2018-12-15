@@ -159,6 +159,9 @@
                 this.formData = modelArray[0]
                 this.formData.model_id = this.selectedModelId
 
+                // Clear the schema
+                this.schema = []
+
                 for (const [key, value] of Object.entries(this.formData)) {
                     
                     //don't need a for field for this
@@ -183,8 +186,6 @@
                         }
                     }
                     
-                    // Clear the schema
-                    this.schema = []
                     // Update fields to match model selection
                     this.schema.push(inputField)
 
