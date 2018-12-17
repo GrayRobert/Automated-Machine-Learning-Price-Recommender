@@ -6,8 +6,6 @@
                 <i class="fa fa-user fa-lg mr-3 white"></i>
             </template>
             <b-dropdown-header tag="div" class="text-center"><strong>Account</strong></b-dropdown-header>
-            <b-dropdown-item><i class="fa fa-user" /> Profile</b-dropdown-item>
-            <b-dropdown-item><i class="fa fa-wrench" /> Settings</b-dropdown-item>
             <b-dropdown-item v-on:click="logout"><i class="fa fa-lock" /> Logout</b-dropdown-item>
         </b-dropdown>
     </div>
