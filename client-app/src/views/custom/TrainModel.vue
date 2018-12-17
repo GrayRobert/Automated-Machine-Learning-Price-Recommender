@@ -61,7 +61,7 @@
                 <b-row>
                     <b-col>
                         <b-form-group
-                            label="Select categroical fields to encode"
+                            label="Select categorical fields to encode"
                             label-for="encodeCatFields"
                             :label-cols="3"
                             :horizontal="true">

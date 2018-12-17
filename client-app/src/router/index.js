@@ -14,10 +14,6 @@ const ForgotPassword = () => import('@/views/pages/ForgotPassword')
 const Page404 = () => import('@/views/pages/Page404')
 const Page500 = () => import('@/views/pages/Page500')
 
-// Users
-const Users = () => import('@/views/users/Users')
-const User = () => import('@/views/users/User')
-
 Vue.use(Router)
 
 export default new Router({
@@ -35,26 +31,7 @@ export default new Router({
           path: 'dashboard',
           name: 'Dashboard',
           component: Dashboard
-        },
-        {
-          path: 'users',
-          meta: { label: 'Users'},
-          component: {
-            render (c) { return c('router-view') }
-          },
-          children: [
-            {
-              path: '',
-              component: Users,
-            },
-            {
-              path: ':id',
-              meta: { label: 'User Details'},
-              name: 'User',
-              component: User,
-            },
-          ]
-        },
+        }
       ]
     },
     {
@@ -79,11 +56,6 @@ export default new Router({
           path: 'login',
           name: 'Login',
           component: Login
-        },
-        {
-          path: 'register',
-          name: 'Register',
-          component: Register
         },
         {
           path: 'forgotpassword',

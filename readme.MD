@@ -69,20 +69,21 @@ From a web browser navigate to http://localhost:8080 and login with superuser cr
 # Docker Builds For Server
 
 ## Requirements
-*  Linux/Unix
-*  Docker
-*  Python 3.6
+*  Linux (Debian Recommended)
+*  Docker v18.00.0+
+*  Docker Compose v3+
+*  Python v3.6
 
 ## Build the base docker image
 From the root directory:
 
-    --Build the iamge
+    --Build the image
     # docker build -t grayrobert/price-recommender-base -f docker/base/Dockerfile .
 
     --Push to docker hub
     # docker push grayrobert/price-recommender-base
 
-After running docker images you should have a new base ubuntu image
+After running docker images you should have a new base ubuntu image with python installed
 
 ## Build the production docker image from the base docker image (REST-API Server)
 Note: during docker build the training service python file train.production.py replaces the default train.py and enables TPOT and AUTO-SKLEARN models mentioned earlier.
@@ -91,14 +92,14 @@ From the root directory:
 
     # docker build -t grayrobert/price-recommender-server -f docker/server/production/Dockerfile .
 
-    --You can run the image and jump a bash prompt using the following command
+    --You can run the image and jump to a bash prompt using the following command
     # docker run -it --entrypoint /bin/bash grayrobert/price-recommender-server
 
-    --Push to docker hub
+    --Push to docker hub (please don't do this without permission)
     # docker push grayrobert/price-recommender-server
 
 
-## Save the server docker image for deployment to production
+## Save the server docker image for manual deployment to production
 From the root directory:
 
     # docker save -o target/price-recommender-server.tar grayrobert/price-recommender-server:latest
@@ -113,25 +114,31 @@ From the root directory:
 ## Build the client docker image
 From the root directory:
 
-    --Build the iamge
+    --Build the image
     # docker build -t grayrobert/price-recommender-client -f docker/client/Dockerfile .
 
-    --Push to docker hub
+    --Push to docker hub (please don't do this without permission)
     # docker push grayrobert/price-recommender-client
 
 ## Run the client docker image
 
     # docker run -it -p 8080:8080 --rm grayrobert/price-recommender-client
 
-## Save the client docker image for deployment to production
+## Save the client docker image for manual deployment to production
 From the root directory:
 
     # docker save -o target/price-recommender-client.tar grayrobert/price-recommender-client:latest
 
 
 # To Run the application in production
-Docker compose will orchestrate the starting of both the server and client, mapping ports and whatever other requirements are needed.
+Docker compose will orchestrate the build of images and starting of both the server and client, mapping ports and whatever other requirements are needed. Curently the most streamlined way to put the application into production is to install docker, docker compose and git. Clone the source code fom git repository and then use docker-compose to do all the heavy lifting.
+
+On a server with Debian Linux, GIT, Docker and Docker Compose installed and the source code cloned from git repository simply do the following two step deployment.
 From the root directory:
 
-    1. Run the save commands above to 
+    1. Pull the latest changes from master branch 
+    # git pull origin master
+    2. Run the following command 
     # docker-compose --file docker/server/production/docker-compose.yml up --build
+
+Then open a browser and navigate to http://ip of server or localhost:80
