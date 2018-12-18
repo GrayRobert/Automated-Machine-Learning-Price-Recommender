@@ -76,4 +76,9 @@ export default {
   .menu-icon {
     color: white !important;
   }
+  .fix-select select {
+        -moz-appearance:none; /* Firefox */
+        -webkit-appearance:none; /* Safari and Chrome */
+        appearance:none;
+    }
 </style>

@@ -7,7 +7,7 @@
         </b-row>
         <b-row>
             <b-col>
-                <b-form-group>
+                <b-form-group class="fix-select">
                     <label>Select Previously Trained Model</label>
                     <b-form-select v-model="selectedModelId" :options="modelSelection" class="mb-3" />
                 </b-form-group>

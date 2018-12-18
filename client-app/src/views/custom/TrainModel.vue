@@ -109,6 +109,7 @@
                 <b-row>
                     <b-col>
                         <b-form-group
+                            class="fix-select" 
                             label="Select field to predict"
                             label-for="predictField">
                             <b-form-select v-model="predictField"
@@ -120,6 +121,7 @@
                 <b-row>
                     <b-col>
                         <b-form-group
+                        class="fix-select" 
                         label="Select Transformation (Currently Log10 only)"
                         label-for="transformation">
                             <b-form-select v-model="transformation" 
@@ -131,6 +133,7 @@
                 <b-row>
                     <b-col>
                     <b-form-group
+                        class="fix-select" 
                         label="Select Machine Learning Model"
                         label-for="model_select_train"
                         :label-cols="10"
@@ -153,6 +156,7 @@
                 <b-row>
                     <b-col>
                         <b-form-group
+                        class="fix-select" 
                         label="Select Max Allowed RunTime (For AutoML Only)"
                         label-for="max_allowed_run_time">
                             <b-form-select v-model="maxAllowedRunTime" :options="maxAllowedRunTimeOptions" id="max_allowed_run_time" class="mb-3" />
