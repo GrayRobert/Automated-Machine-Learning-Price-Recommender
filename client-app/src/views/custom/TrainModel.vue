@@ -232,7 +232,8 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             transformationOptions: [
                 {text: 'none ', value: 'none'},
                 {text: 'log10 ', value: 'log10'}
-            ]
+            ],
+            baseUrl: process.env.BASE_URL
         };
     },
     computed: {
@@ -275,23 +276,26 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             let self = this;
 
             const papaConfig = {
-                    header: true,
-                    dynamicTyping: true,
-                    preview: 10,
-                    complete: function (data) {
-                        self.modelFields = data.meta.fields
-                        self.modelFields.forEach(function(field) {
-                            self.fieldOptions.push({
-                                text: field,
-                                value: field
-                            })
+                worker: true,
+                quoteChar: '"',
+                header: true,
+                dynamicTyping: true,
+                preview: 1,
+                complete: function (data) {
+                    self.modelFields = data.meta.fields
+                    self.modelFields.forEach(function(field) {
+                        self.fieldOptions.push({
+                            text: field,
+                            value: field
                         })
-                    },
-                    error: function (err) {
-                        console.log(err);
-                    }
+                    })
+                },
+                error: function (err) {
+                    console.log(err);
                 }
+            }
 
+            Papa.SCRIPT_PATH = '/papaparse.min.js';
 
             Papa.parse(fileList[0], papaConfig);
 

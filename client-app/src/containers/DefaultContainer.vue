@@ -8,13 +8,6 @@
       </b-navbar-nav>
     </AppHeader>
     <div class="app-body">
-      <AppSidebar class="d-none">
-        <SidebarHeader/>
-        <SidebarForm/>
-        <SidebarNav :navItems="nav"></SidebarNav>
-        <SidebarFooter/>
-        <SidebarMinimizer/>
-      </AppSidebar>
       <main class="main">
         <Breadcrumb :list="list"/>
         <div class="container-fluid">
@@ -56,7 +49,6 @@ export default {
   },
   data () {
     return {
-      nav: nav.items
     }
   },
   computed: {
