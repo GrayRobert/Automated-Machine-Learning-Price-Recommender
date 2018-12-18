@@ -22,6 +22,7 @@ import autosklearn.regression
 from sklearn.preprocessing import OneHotEncoder
 import os
 import json
+from django.utils.encoding import smart_str
 
 from recommender.services.database import DatabaseStorageController
 from recommender.services.scatterplot import ScatterPlotService
@@ -57,7 +58,7 @@ class ModelTrainingService():
             if len(self.dropList) > 0:
                 for dropField in self.dropList:
                     if dropField != '':
-                        print("Field being dropped: " + dropField)
+                        print("Field being dropped: " + smart_str(dropField))
                         data.drop(dropField, axis=1, inplace=True, errors='ignore')
 
             # We store one record as a sample JSON object that will later be used to consturct test prediction form based on the fields of the model
@@ -70,14 +71,14 @@ class ModelTrainingService():
             if len(self.encodeDateList) > 0:
                 for dateField in self.encodeDateList:
                     if dateField != '':
-                        print("Date Field encoded as week: " + str(dateField))
+                        print("Date Field encoded as week: " + smart_str(dateField))
                         data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
 
             # Encode Categorical Fields
             if len(self.encodeCatList) > 0:
                 for catField in self.encodeCatList:
                     if catField != '':
-                        print("Field being enocded as dummy: " + catField)
+                        print("Field being enocded as dummy: " + smart_str(catField))
                         data[catField] = data[catField].astype('category')
 
             # Encode Dummies For All Categorical Data
@@ -101,7 +102,7 @@ class ModelTrainingService():
                 data[self.dependentVariable] = np.log10(data[self.dependentVariable])
 
             # Show data
-            print(data.head())
+            print(smart_str(data.head()))
 
             # Set predictor/target variable
             y=np.array(data[self.dependentVariable])
@@ -117,7 +118,7 @@ class ModelTrainingService():
                 X,y, test_size=0.20, random_state=42)
 
 
-            print("Training Model As: " + self.modelType + "\n")
+            print("Training Model As: " + smart_str(self.modelType) + "\n")
 
             # Random Forrest Regressor
             if(self.modelType == 'RFR'):
@@ -187,7 +188,7 @@ class ModelTrainingService():
                 "RMSE": str(rmse)
                 }
 
-            print("Accuracy is: " + str(accuracy))
+            print("Accuracy is: " + smart_str(accuracy))
 
             # Prepare some test data
             testJSON = testData.to_json(orient='records')

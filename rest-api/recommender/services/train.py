@@ -18,10 +18,11 @@ from tpot import TPOTRegressor
 from scipy.stats import spearmanr, pearsonr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
-# import autosklearn.regression
+#import autosklearn.regression
 from sklearn.preprocessing import OneHotEncoder
 import os
 import json
+from django.utils.encoding import smart_str
 
 from recommender.services.database import DatabaseStorageController
 from recommender.services.scatterplot import ScatterPlotService
@@ -57,7 +58,7 @@ class ModelTrainingService():
             if len(self.dropList) > 0:
                 for dropField in self.dropList:
                     if dropField != '':
-                        print("Field being dropped: " + dropField)
+                        print("Field being dropped: " + smart_str(dropField))
                         data.drop(dropField, axis=1, inplace=True, errors='ignore')
 
             # We store one record as a sample JSON object that will later be used to consturct test prediction form based on the fields of the model
@@ -70,14 +71,14 @@ class ModelTrainingService():
             if len(self.encodeDateList) > 0:
                 for dateField in self.encodeDateList:
                     if dateField != '':
-                        print("Date Field encoded as week: " + str(dateField))
+                        print("Date Field encoded as week: " + smart_str(dateField))
                         data[dateField] = pd.to_datetime(data[dateField], format='%Y/%m/%d').dt.week
 
             # Encode Categorical Fields
             if len(self.encodeCatList) > 0:
                 for catField in self.encodeCatList:
                     if catField != '':
-                        print("Field being enocded as dummy: " + catField)
+                        print("Field being enocded as dummy: " + smart_str(catField))
                         data[catField] = data[catField].astype('category')
 
             # Encode Dummies For All Categorical Data
@@ -101,7 +102,7 @@ class ModelTrainingService():
                 data[self.dependentVariable] = np.log10(data[self.dependentVariable])
 
             # Show data
-            print(data.head())
+            print(smart_str(data.head()))
 
             # Set predictor/target variable
             y=np.array(data[self.dependentVariable])
@@ -117,7 +118,7 @@ class ModelTrainingService():
                 X,y, test_size=0.20, random_state=42)
 
 
-            print("Training Model As: " + self.modelType + "\n")
+            print("Training Model As: " + smart_str(self.modelType) + "\n")
 
             # Random Forrest Regressor
             if(self.modelType == 'RFR'):
@@ -135,9 +136,6 @@ class ModelTrainingService():
             # Decission Tree Regressor
             if (self.modelType == 'DTR'):
                 model = DecisionTreeRegressor(random_state=42)
-            if (self.modelType == 'SVR' or self.modelType == 'TPOT' or self.modelType == 'AUTOSK'):
-                print("Model Type " + self.modelType + " is not supported in development without using docker. See readme.MD")
-            """
             # Support Vector Regressor
             if (self.modelType == 'SVR'):
                 tpot_config = { 'sklearn.svm.SVR': {},
@@ -163,12 +161,10 @@ class ModelTrainingService():
                                         random_state=42
                                     )
             # Try AutoML with AUTO-SKLEAN
-            if(self.modelType == 'AUTOSK'):
+            """if(self.modelType == 'AUTOSK'):
                 model = autosklearn.regression.AutoSklearnRegressor(
                     time_left_for_this_task=self.maxAllowedRunTime*60,
                     per_run_time_limit=3600,
-                    tmp_folder='/tmp/',
-                    output_folder='/tmp/out',
                 )"""
             model.fit(X_train, y_train)
             predicted_test = model.predict(X_test)
@@ -177,7 +173,7 @@ class ModelTrainingService():
             if self.transformation == 'log10':
                 y_test = np.power(10,y_test)
                 predicted_test = np.power(10,predicted_test)
-
+            
             r2 = r2_score(y_test, predicted_test)
             spearman = spearmanr(y_test, predicted_test)
             pearson = pearsonr(y_test, predicted_test)
@@ -192,7 +188,7 @@ class ModelTrainingService():
                 "RMSE": str(rmse)
                 }
 
-            print("Accuracy is: " + str(accuracy))
+            print("Accuracy is: " + smart_str(accuracy))
 
             # Prepare some test data
             testJSON = testData.to_json(orient='records')
@@ -207,7 +203,12 @@ class ModelTrainingService():
 
             modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
             print("Pickling Model...\n")
-            joblib.dump(model, modelFile)
+
+            # For TPOT we can't pickle the entire model
+            if (self.modelType == 'TPOT' or self.modelType == 'SVR'):
+                joblib.dump(model.fitted_pipeline_, modelFile)
+            else:
+                joblib.dump(model, modelFile)
 
             database.updateModelFile(modelID, modelFile)
 
