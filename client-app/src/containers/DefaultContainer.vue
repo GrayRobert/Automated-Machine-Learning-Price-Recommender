@@ -66,6 +66,7 @@ export default {
   .app-header {
     background-image: linear-gradient(to left, #000000, #29081a, #470135, #5e005c, #68008e, #5d22a7, #4838bf, #004ad7, #0057bd, #00528c, #004759, #003935);
     height:100px;
+    box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.2);
   }
   .menu-icon {
     color: white !important;
