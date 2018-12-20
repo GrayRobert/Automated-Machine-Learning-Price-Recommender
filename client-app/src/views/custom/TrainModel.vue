@@ -351,6 +351,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         padding: 10px 10px;
         min-height: 250px; /* minimum height */
         cursor: pointer;
+        z-index: 1;
     }
 
     .input-file {
@@ -361,7 +362,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         top: 0;
         left: 0;
         cursor: pointer;
-        z-index: 9999;
+        z-index: 10;
     }
 
     .dropbox:hover {
@@ -378,6 +379,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         background-position: center top;
         position: relative;
         top: 90px;
+        z-index: 5;
     }
 
     .training-text {
