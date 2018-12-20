@@ -349,7 +349,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         background: rgba(255, 255, 255, 0.705);
         color: dimgray;
         padding: 10px 10px;
-        min-height: 350px; /* minimum height */
+        min-height: 250px; /* minimum height */
         cursor: pointer;
     }
 
@@ -361,6 +361,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         top: 0;
         left: 0;
         cursor: pointer;
+        z-index: 9999;
     }
 
     .dropbox:hover {
@@ -376,7 +377,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         background-size: 20px;
         background-position: center top;
         position: relative;
-    top: 90px;
+        top: 90px;
     }
 
     .training-text {
