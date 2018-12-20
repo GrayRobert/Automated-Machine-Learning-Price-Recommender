@@ -3,6 +3,7 @@
     <AppHeader fixed class="app-header">
       <SidebarToggler class="d-lg-none" mobile />
       <SidebarToggler class="d-md-down-none" />
+      <div class="logo">PR</div>
       <b-navbar-nav class="ml-auto">
         <user-panel/>
       </b-navbar-nav>
@@ -63,7 +64,8 @@ export default {
 </script>
 <style lang="scss">
   .app-header {
-    background-color: black;
+    background-image: linear-gradient(to left, #000000, #29081a, #470135, #5e005c, #68008e, #5d22a7, #4838bf, #004ad7, #0057bd, #00528c, #004759, #003935);
+    height:100px;
   }
   .menu-icon {
     color: white !important;
@@ -73,4 +75,13 @@ export default {
         -webkit-appearance:none; /* Safari and Chrome */
         appearance:none;
     }
+  .logo {
+    color: white;
+    text-align: center;
+    float: left;
+    font-size: 2em;
+    position: relative;
+    top:0px;
+
+  }
 </style>

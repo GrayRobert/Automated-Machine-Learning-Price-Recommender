@@ -30,7 +30,6 @@ export default {
 
 <style>
 #scatter-plot {
-    margin: auto;
-    width: 65%;
+
 }
 </style>

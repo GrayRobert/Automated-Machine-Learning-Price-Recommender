@@ -9,7 +9,6 @@
                 <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
                     accept="text/csv" class="input-file">
                     <div v-if="isInitial">
-                        <div class="arrow-down"></div>
                         <p>Drop your CSV file here <br> or click to browse</p>
                     </div>
                     <p v-if="isSaving">
@@ -350,16 +349,14 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         background: rgba(255, 255, 255, 0.705);
         color: dimgray;
         padding: 10px 10px;
-        min-height: 200px; /* minimum height */
-        position: relative;
+        min-height: 350px; /* minimum height */
         cursor: pointer;
     }
 
     .input-file {
         opacity: 0; /* invisible but it's there! */
         width: 100%;
-        height: 200px;
-        position: absolute;
+        height: 60px;
         cursor: pointer;
     }
 
@@ -371,19 +368,12 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
         font-size: 1.2em;
         text-align: center;
         padding: 50px 0;
+        background-image: url("/images/arrow.png");
+        background-repeat: no-repeat;
+        background-size: 20px;
+        background-position: center top;
     }
 
-    .arrow-down {
-        width: 0; 
-        height: 0;
-        left: 45%;
-        top:20%;
-        border-left: 20px solid transparent;
-        border-right: 20px solid transparent;
-
-        border-top: 20px solid rgb(231, 231, 231);
-        position: absolute;
-    }
     .training-text {
         margin-top:5px;
         color:#20a8d8;

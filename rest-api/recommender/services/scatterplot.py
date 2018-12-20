@@ -16,8 +16,8 @@ class ScatterPlotService():
 
         TOOLS="hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,"
 
-        p = figure(tools=TOOLS, plot_width=500, 
-                plot_height=300)
+        p = figure(tools=TOOLS, plot_width=300, 
+                plot_height=150)
 
         p.scatter(x, y,
                 fill_color='#6666ff', fill_alpha=0.3,
@@ -26,6 +26,8 @@ class ScatterPlotService():
         p.line([x.min(), x.max()], [x.min(), x.max()],line_color="#666699", line_width=4, line_dash='dashed')
 
         p.toolbar.logo = None
+
+        p.sizing_mode = 'scale_width'
 
         jsonified = json.dumps(json_item(p, "scatter-plot"))
 
