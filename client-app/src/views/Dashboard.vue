@@ -19,7 +19,7 @@
             </b-row>
             <div slot="footer">
               <b-row class="text-center">
-                  <span>Based on Model: ID:{{currentModel.id}} | Type:{{currentModel.model_type}}</span>
+                  <span>Based on Model: ID:{{currentModel.id}} | Type:{{currentModel.model_type}} | Description: {{currentModel.description}}</span>
               </b-row>
             </div>
           </b-card>
@@ -83,7 +83,7 @@ export default {
       historyFields: [
         {key: 'id'},
         {key: 'model_type'},
-        {key: 'dependent_variable'},
+        {key: 'description'},
         {
           key: 'trained_date',
           formatter: (value) => { return moment(value).format('MMM Do YYYY, h:mm:ss a') }

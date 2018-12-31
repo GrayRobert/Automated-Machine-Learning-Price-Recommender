@@ -60,6 +60,19 @@
                 <b-row>
                     <b-col>
                         <b-form-group
+                            label="Description"
+                            label-for="description"
+                            :label-cols="3"
+                            :horizontal="true">
+                            <b-form-input id="description"
+                                type="text"
+                                v-model="description" />
+                        </b-form-group>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col>
+                        <b-form-group
                             label="Select categorical fields to encode"
                             label-for="encodeCatFields"
                             :label-cols="3"
@@ -219,6 +232,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             predictField: null,
             categroicals: [],
             targetVariable: null,
+            description: null,
             maxAllowedRunTime: 60,
             maxAllowedRunTimeOptions: [
                 {text: 'None ',value: 0},
@@ -274,6 +288,9 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
             const formData = new FormData();
             let self = this;
 
+            // clear the form
+            self.modelFields = []
+
             const papaConfig = {
                 worker: true,
                 quoteChar: '"',
@@ -320,6 +337,7 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED =
                 if (this.encodeDateFields) {formData.append("encodedate", this.encodeDateFields)}
                 if (this.dropFields) {formData.append("drop", this.dropFields)}
             formData.append("predict", this.predictField)
+            formData.append("description", this.description)
             formData.append("model", this.model_select_train)
             formData.append("variables", this.modelFields)
             formData.append("runtime", this.maxAllowedRunTime)

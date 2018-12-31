@@ -35,9 +35,10 @@ JOBLIB_EXTENTION = '.joblib'
 class ModelTrainingService():
 
     # CONSTRUCTOR
-    def __init__(self, independentVariables, dependentVariable, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime):
+    def __init__(self, independentVariables, dependentVariable, modelDescription, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime):
         self.independentVariables = independentVariables
         self.dependentVariable = dependentVariable
+        self.modelDescription = modelDescription
         self.transformation = transformation
         self.encodeCatList = encodeCatList
         self.encodeDateList = encodeDateList
@@ -199,7 +200,7 @@ class ModelTrainingService():
 
             # Store model training history
             database = DatabaseStorageController('UserID')
-            modelID = database.storeTrainedModel(json.dumps(processedFields), json.dumps(self.dependentVariable), json.dumps(self.transformation), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, rmse, str(testJSON), str(plot))
+            modelID = database.storeTrainedModel(json.dumps(processedFields), self.dependentVariable, self.modelDescription, json.dumps(self.transformation), json.dumps(self.encodeCatList), json.dumps(self.encodeDateList), json.dumps(self.dropList), json.dumps(dummies), self.modelType, r2, rmse, str(testJSON), str(plot))
 
             modelFile = os.path.join(self.filesDir, self.modelType + str(modelID) + JOBLIB_EXTENTION)
             print("Pickling Model...\n")

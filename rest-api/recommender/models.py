@@ -3,6 +3,7 @@ from django.db import models
 class ModelTraining(models.Model):
     independent_variables = models.TextField(null=True, blank=True)
     dependent_variable = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     transformation = models.TextField(null=True, blank=True)
     encode_cat_list = models.TextField(null=True, blank=True)
     encode_date_list = models.TextField(null=True, blank=True)

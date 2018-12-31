@@ -144,7 +144,7 @@
                 this.history.forEach(function(model) {
                     if(model.model_file) {
                         self.modelSelection.push(
-                            { value: model.id, text: model.id + ' - ' + model.model_type +  ' - ' + self.formatDate(model.trained_date)}
+                            { value: model.id, text: model.id + ') ' + model.model_type + ' ' + model.description +  ' - ' + self.formatDate(model.trained_date)}
                         )
                     }
                 })  

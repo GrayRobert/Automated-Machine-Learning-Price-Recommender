@@ -50,6 +50,10 @@ class TrainModelView(views.APIView):
     dependentVariable = request.data['predict']
     print('Target Variable is: ' + dependentVariable)
 
+    # Get our model description
+    modelDescription = request.data['description']
+    print('The model description is: ' + modelDescription)
+
     # Do we want to do a transformation on dependent variable
     transformation = request.data['transformation']
     print('Transformation is: ' + transformation)
@@ -77,7 +81,7 @@ class TrainModelView(views.APIView):
       raise ParseError("Max Allowed Run Time is 24 hours")
 
     # Train the model and return the accuracy
-    model = ModelTrainingService(independentVariables, dependentVariable, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime)
+    model = ModelTrainingService(independentVariables, dependentVariable, modelDescription, transformation, encodeCatList, encodeDateList, dropList, modelType, maxAllowedRunTime)
     accuracy = model.trainModel()
     return Response(accuracy)
 
