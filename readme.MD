@@ -1,3 +1,5 @@
+Version 1.01
+
 # Server (Django Rest-API)
 
 ## System Requirements
