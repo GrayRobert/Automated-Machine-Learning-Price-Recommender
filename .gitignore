@@ -1,0 +1,12 @@
+*.csv
+venv.old
+venv
+.dockerignore
+node_modules.old
+client-app/node_modules
+#rest-api/recommender/migrations
+rest-api/files
+target
+db.sqlite
+rest-api/db.sqlite3
+__pycache__

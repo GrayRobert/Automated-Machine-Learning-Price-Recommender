@@ -12,7 +12,7 @@ Version 1.01
 ## Important Note!
 In /recommender/services/train.py AutoML frameworks TPOT and AUTO-SKLEARN might not run properly in non-linux environments. So they can be commented out in the source code for running locally in development outside of a docker container. AUTO-SKLEARN is commented out by default as it will not install on my development environment of MacOS. You might also need to comment out TPOT and not use these models locally. The production docker image allows you to work around these limitations.
 
-## Create a Python Virtual Environment
+## Create a Python Virtual Environment (pip install virtualenv)
 From the project root directory
 
     # virtualenv venv
