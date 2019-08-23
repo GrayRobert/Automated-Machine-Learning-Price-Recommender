@@ -3,12 +3,12 @@ stopit
 setuptools
 nose
 Cython
-scipy>=0.14.1
+scipy==0.14.1
 lockfile
 psutil
 pyyaml
 liac-arff
-ConfigSpace>=0.4.7
-pynisher>=0.4.2
-pyrfr>=0.8
+ConfigSpace==0.4.7
+pynisher==0.4.2
+pyrfr==0.8
 smac==0.8
