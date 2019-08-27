@@ -1,7 +1,7 @@
 Version 1.01
 
 # Server (Django Rest-API)
-This is essentially a complete automated machine learning application that can train models and expose them via a REST. It started as a Price Recommender but could be easily adapted to work with other projects. The thesis that accompanied the project is in the source and worth a read.
+This is essentially a complete automated machine learning application that can train models and expose them via REST. It started as a Price Recommender but could be easily adapted to work with other projects. The thesis that accompanied the project is in the source and worth a read.
 
 ## System Requirements
 *  Python 3.6
