@@ -1,4 +1,48 @@
-Version 1.01
+# Automated Machine Learning Price Recommender
+
+An end-to-end automated machine learning platform I built in 2019 as my BSc final-year project. A user uploads tabular sales data, configures a training run, and the system trains and compares regression models, then serves the trained model through a REST API and a web dashboard for making new predictions. The original use case was recommending holiday prices for a travel operator from historical booking data.
+
+The full thesis is in this repo: [Bachelor_Thesis_Report___Robert_Gray___Price_Recommender_System.pdf](Bachelor_Thesis_Report___Robert_Gray___Price_Recommender_System.pdf).
+
+## Screenshots
+
+![Training dashboard: CSV upload, predicted vs actual chart, price recommendation and model history panels](docs/images/dashboard.png)
+
+*The "Accuracy" label in these 2019 screenshots is the model's R-squared, not the percentage of prices predicted correctly. See Results below.*
+
+![Training options: encoding, target and model selection](docs/images/training-options.png)
+
+![Price recommendation panel showing R-squared and RMSE for a selected model](docs/images/metrics-panel.png)
+
+## What it does
+
+- Upload a CSV of historical sales data through the web UI
+- Configure the training run: target variable, categorical and date encoding, field drops, log transformation, model type, max runtime
+- Train with scikit-learn ensembles, XGBoost, or TPOT genetic-programming AutoML (auto-sklearn also integrated)
+- View evaluation metrics (R-squared, RMSE, rank correlation) and a predicted-vs-actual scatter plot
+- Make new predictions through an auto-generated form or the REST API
+
+## Architecture
+
+- Django REST API (Python) - training pipeline, model registry, prediction endpoints
+- Vue.js single-page dashboard - upload, training configuration, prediction forms, charts
+- Docker / docker-compose for production deployment
+
+## Results
+
+On the holiday-pricing dataset, the best models reached R-squared of 0.82 to 0.84 on a held-out random test split. R-squared is the share of price variance explained by the model, not the percentage of prices predicted correctly.
+
+## Context and limitations
+
+- The model predicts the price a holiday actually sold for. Completed bookings do not capture customers who declined a price or inventory that went unsold, so this is price prediction from past sales rather than evidence of revenue-optimal pricing.
+- Evaluation used a random train/test split. An out-of-time evaluation on a later season would be a stronger test of real-world performance.
+- The project was not piloted with the business, so its revenue impact was never measured.
+
+## Running it
+
+The original 2019 setup instructions are preserved below for the record. They reflect the Python 3.6-era dependencies of the time and have not been verified on current systems.
+
+---
 
 # Server (Django Rest-API)
 This is essentially a complete automated machine learning application that can train models and expose them via REST. It started as a Price Recommender but could be easily adapted to work with other projects. The thesis that accompanied the project is in the source and worth a read.
@@ -36,7 +80,7 @@ From the rest-api directory
 
     # cd rest-api
     # python manage.py createsuperuser
-    # user: admin, pass: admin123$
+    # choose your own unique username and a strong password
 
 ## Run the Rest-API Server
 
