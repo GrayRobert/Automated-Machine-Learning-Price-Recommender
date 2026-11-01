@@ -6,13 +6,13 @@ The full thesis is in this repo: [Bachelor_Thesis_Report___Robert_Gray___Price_R
 
 ## Screenshots
 
-![Training dashboard: CSV upload, predicted vs actual chart, price recommendation and model history panels](docs/images/dashboard.png)
+![Training dashboard: CSV upload, predicted vs actual chart, price recommendation and model history panels](https://github.com/user-attachments/assets/dce1b16a-4171-4572-87ad-03b277cf8b78)
 
 *The "Accuracy" label in these 2019 screenshots is the model's R-squared, not the percentage of prices predicted correctly. See Results below.*
 
-![Training options: encoding, target and model selection](docs/images/training-options.png)
+![Training options: encoding, target and model selection](https://github.com/user-attachments/assets/48797319-9b55-4a9c-b725-a34dfd177fdc)
 
-![Price recommendation panel showing R-squared and RMSE for a selected model](docs/images/metrics-panel.png)
+![Price recommendation panel showing R-squared and RMSE for a selected model](https://github.com/user-attachments/assets/224f8f0b-2b75-4b75-bec3-4ec76a041b41)
 
 ## What it does
 
