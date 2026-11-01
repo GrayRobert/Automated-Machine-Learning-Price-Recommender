@@ -4,6 +4,10 @@ An end-to-end automated machine learning platform I built in 2019 as my BSc fina
 
 The full thesis is in this repo: [Bachelor_Thesis_Report___Robert_Gray___Price_Recommender_System.pdf](Bachelor_Thesis_Report___Robert_Gray___Price_Recommender_System.pdf).
 
+Try the live demo: train and compare models on sample data or your own CSV, then generate predictions, all in your browser.
+
+https://grayrobert.github.io/Automated-Machine-Learning-Price-Recommender/
+
 ## Screenshots
 
 ![Training dashboard: CSV upload, predicted vs actual chart, price recommendation and model history panels](https://github.com/user-attachments/assets/dce1b16a-4171-4572-87ad-03b277cf8b78)
