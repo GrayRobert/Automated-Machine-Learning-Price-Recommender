@@ -6,6 +6,7 @@
 <title>Price Recommender - Interactive Demo</title>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
   :root { --ink:#1b2030; --muted:#5b6478; --line:#e4e8f0; --bg:#f5f7fb; --card:#ffffff; }
   * { box-sizing: border-box; }
@@ -27,6 +28,7 @@
   .spinner.on { display:inline-block; }
   @keyframes spin { to { transform:rotate(360deg); } }
   button { background:#2b32b2; color:#fff; border:0; border-radius:6px; padding:9px 18px; font-size:14px; cursor:pointer; }
+  button.ghost { background:#eef1fa; color:#2b32b2; border:1px solid #c9d2ee; }
   button:disabled { opacity:.5; cursor:default; }
   table.metrics { width:100%; border-collapse:collapse; font-size:13.5px; margin-top:8px; }
   table.metrics th, table.metrics td { text-align:right; padding:7px 10px; border-bottom:1px solid var(--line); }
@@ -36,192 +38,545 @@
   form { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
   label { font-size:12.5px; color:var(--muted); display:block; margin-bottom:4px; }
   input, select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
-  #predOut { margin-top:16px; font-size:15px; display:none; }
-  #predOut strong { font-size:22px; color:#2b32b2; }
   canvas { max-width:100%; }
   footer { text-align:center; color:var(--muted); font-size:12.5px; padding:28px 16px 40px; }
   .err { color:#b00020; font-size:13px; white-space:pre-wrap; }
+  .srcRow { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:12px; }
+  .srcRow label { font-size:14px; color:var(--ink); display:flex; gap:6px; align-items:center; margin:0; cursor:pointer; }
+  .srcRow input[type=radio] { width:auto; }
+  #fileInput { max-width:320px; }
+  .limits { font-size:12px; color:var(--muted); margin-top:8px; }
+  .previewWrap { overflow-x:auto; margin-top:12px; }
+  table.preview { border-collapse:collapse; font-size:12px; }
+  table.preview th, table.preview td { border:1px solid var(--line); padding:4px 8px; text-align:left; white-space:nowrap; max-width:180px; overflow:hidden; text-overflow:ellipsis; }
+  table.preview th { background:#f0f3fa; }
+  .colGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:6px 16px; margin-top:8px; }
+  .colItem { display:flex; gap:8px; align-items:baseline; font-size:13.5px; }
+  .colItem input { width:auto; margin-top:2px; }
+  .badge { font-size:10.5px; padding:1px 6px; border-radius:8px; background:#eef1fa; color:#2b32b2; white-space:nowrap; }
+  .badge.warn { background:#fdf0e4; color:#9a5b00; }
+  .dq { margin-top:12px; font-size:13px; color:var(--muted); }
+  .dq li { margin-bottom:3px; }
+  #predOut { margin-top:16px; font-size:15px; display:none; }
+  #predOut strong { font-size:22px; color:#2b32b2; }
+  .divider { border-top:1px solid var(--line); margin:18px 0 14px; }
+  .hidden { display:none !important; }
 </style>
 </head>
 <body>
 <header>
   <h1>Price Recommender - Interactive Demo</h1>
   <p>Companion demo for <a href="https://github.com/GrayRobert/Automated-Machine-Learning-Price-Recommender">GrayRobert/Automated-Machine-Learning-Price-Recommender</a>
-  (BSc thesis, 2019). Three regression models train <strong>in your browser</strong> on synthetic holiday-package data using
-  scikit-learn compiled to WebAssembly (Pyodide). Training and prediction run locally on the bundled synthetic sample data; no user data is uploaded or collected.</p>
+  (BSc thesis, 2019). Train regression models <strong>in your browser</strong> on the bundled synthetic sample, or upload your own CSV
+  and build a predictor from it, using scikit-learn compiled to WebAssembly (Pyodide). Everything runs locally on your device:
+  files you choose are read by your browser only and are never uploaded or sent anywhere.</p>
 </header>
 <div class="wrap">
-  <div class="banner"><strong>Demo data only.</strong> The 3,000 training rows are synthetic, generated from a fixed formula plus noise
-  (seed fixed for reproducibility). They do not represent real packages, customers, or prices, and results here demonstrate the
-  training workflow, not production accuracy.</div>
+  <div class="banner" id="banner"><strong>Demo data only.</strong> The 3,000 sample rows are synthetic, generated from a fixed formula
+  plus noise (seed fixed for reproducibility). They do not represent real packages, customers, or prices.</div>
 
   <div class="grid">
     <div class="card wide">
-      <h2>1. Train the models</h2>
-      <p class="sub">Linear Regression, Decision Tree and Random Forest are trained on an 80/20 split. Metrics are computed on the held-out test set after training.</p>
+      <h2>1. Choose your data</h2>
+      <p class="sub">Try it instantly on the sample, or upload a CSV where each row is one record (e.g. one past sale) and each column a field.</p>
+      <div class="srcRow">
+        <label><input type="radio" name="src" id="srcSample" checked> Use bundled sample data</label>
+        <label><input type="radio" name="src" id="srcUpload"> Upload your own CSV</label>
+        <input type="file" id="fileInput" accept=".csv,text/csv" class="hidden">
+      </div>
+      <div class="err" id="dataErr"></div>
+      <div id="dataSummary" style="font-size:13.5px;color:var(--muted)"></div>
+      <div class="previewWrap" id="previewWrap"></div>
+      <div class="limits">Limits: CSV up to 10 MB and 25,000 rows, up to 50 columns. Larger files: take a random sample of your rows first.
+      This tool predicts a number (regression); it does not classify categories or forecast time series.</div>
+    </div>
+
+    <div class="card wide">
+      <h2>2. Choose what to predict</h2>
+      <p class="sub">Pick the numeric column to predict (the target) and the columns to predict it from. Text columns with many distinct
+      values (IDs, dates, free text) are unticked automatically because they rarely generalise; you can tick them back on.</p>
+      <div style="max-width:340px"><label>Target column (what to predict)</label><select id="targetSelect"></select></div>
+      <div class="colGrid" id="featureList"></div>
+      <div style="margin-top:14px"><button id="trainBtn" disabled>Train models</button>
+      <span style="font-size:12.5px;color:var(--muted);margin-left:10px">Trains Linear Regression, Decision Tree and Random Forest on an 80/20 split; metrics are computed on the held-out test set.</span></div>
+      <div class="dq" id="dqBox"></div>
+    </div>
+
+    <div class="card wide">
+      <h2>3. Results</h2>
       <div id="status"><span class="spinner" id="spin"></span><span id="statusText">Loading Python runtime...</span></div>
       <div class="err" id="errBox"></div>
       <div id="metricsTable"></div>
     </div>
 
     <div class="card">
-      <h2>2. Model comparison</h2>
-      <p class="sub">Holdout R-squared by model.</p>
+      <h2>4. Model comparison</h2>
+      <p class="sub" id="cmpSub">Holdout R-squared by model. 1.0 is perfect; 0 means no better than predicting the average.</p>
       <canvas id="cmpChart"></canvas>
     </div>
     <div class="card">
-      <h2>3. Predicted vs actual</h2>
-      <p class="sub">Best model on the 600-row test set. Points near the diagonal are well predicted.</p>
+      <h2>5. Predicted vs actual</h2>
+      <p class="sub" id="pvSub">Best model on the held-out test set. Points near the diagonal are well predicted.</p>
       <canvas id="pvChart"></canvas>
     </div>
     <div class="card wide">
-      <h2>4. Prediction error distribution</h2>
-      <p class="sub">Residuals (predicted minus actual) on the test set, in &euro; per person.</p>
+      <h2>6. Prediction error distribution</h2>
+      <p class="sub" id="errSub">Residuals (predicted minus actual) on the test set.</p>
       <canvas id="errChart" height="90"></canvas>
     </div>
 
     <div class="card wide">
-      <h2>5. Try a prediction</h2>
-      <p class="sub">Runs the best-trained model on your inputs. The result is a predicted historical-style price from the synthetic regression, not an optimal-price recommendation.</p>
-      <form id="predForm">
-        <div><label>Accommodation stars</label><input name="stars" type="number" min="2" max="5" value="4" required></div>
-        <div><label>Board basis</label><select name="board"><option value="0">Room only</option><option value="1">B&amp;B</option><option value="2">Half board</option><option value="3">All inclusive</option></select></div>
-        <div><label>Travel week (1-52)</label><input name="week" type="number" min="1" max="52" value="30" required></div>
-        <div><label>Days before travel</label><input name="lead" type="number" min="1" max="180" value="45" required></div>
-        <div><label>Duration (nights)</label><select name="dur"><option>3</option><option selected>7</option><option>10</option><option>14</option></select></div>
-        <div><label>Pool</label><select name="pool"><option value="1">Yes</option><option value="0">No</option></select></div>
-        <div><label>Sea view</label><select name="seaview"><option value="1">Yes</option><option value="0">No</option></select></div>
-        <div style="align-self:end"><button type="submit" id="predBtn" disabled>Predict price</button></div>
-      </form>
-      <div id="predOut">Predicted price: <strong id="predVal"></strong> <span id="predMeta" style="color:var(--muted);font-size:13px"></span></div>
+      <h2>7. Make predictions</h2>
+      <p class="sub" id="predIntro">Once trained, predict a single case below, or upload a CSV of new rows (same columns as training)
+      to download predictions for all of them. A prediction is a value similar to those in the training data, not a recommendation
+      of the best value to choose.</p>
+      <form id="predForm"></form>
+      <div id="predOut">Predicted <span id="predTargetName"></span>: <strong id="predVal"></strong>
+      <span id="predMeta" style="color:var(--muted);font-size:13px"></span></div>
+      <div class="divider"></div>
+      <h2 style="font-size:14px">Batch predictions from a CSV</h2>
+      <p class="sub">Upload a CSV with the same input columns you trained on (up to 50,000 rows). You'll get a download of your rows
+      with the predicted values appended. Predictions assume the new rows come from the same kind of data as the training file.</p>
+      <div class="srcRow"><input type="file" id="batchInput" accept=".csv,text/csv" disabled>
+      <button id="batchBtn" class="ghost" disabled>Download predictions CSV</button></div>
+      <div class="err" id="batchErr"></div>
+      <div id="batchStatus" style="font-size:13px;color:var(--muted)"></div>
     </div>
   </div>
 </div>
-<footer>Built with Pyodide (scikit-learn on WebAssembly) and Chart.js. Source and thesis:
+<footer>Built with Pyodide (scikit-learn on WebAssembly), Chart.js and Papa Parse. Source and thesis:
 <a href="https://github.com/GrayRobert/Automated-Machine-Learning-Price-Recommender">GitHub</a>.</footer>
 <script>
-const FEATURES = ['accom_stars','board_basis','travel_week','days_before_travel','holiday_duration','has_pool','has_sea_view'];
-let pyodide = null, bestKey = null, bestName = null, trained = false;
-const statusEl = document.getElementById('statusText');
-const spin = document.getElementById('spin');
+const LIMITS = { bytes: 10*1024*1024, rows: 25000, cols: 50, catLevels: 19, batchRows: 50000 };
+const MISSING = ['', 'na', 'n/a', 'null', 'none', '?', '-'];
+let pyodide = null, pyReady = false;
+let data = null;          // {name, cols, rows, isSample}
+let schema = null;        // per-column detection
+let trained = false, bestName = null, targetCol = null, spec = null, isSampleRun = true;
+let charts = {};
+const $ = id => document.getElementById(id);
+const statusEl = $('statusText'), spin = $('spin');
 function setStatus(t, spinning){ statusEl.textContent = t; spin.classList.toggle('on', !!spinning); }
-function fail(msg){ setStatus('Failed.', false); document.getElementById('errBox').textContent = String(msg); }
+function fail(msg){ setStatus('Failed.', false); $('errBox').textContent = String(msg); }
+function fmt(n){ return n.toLocaleString('en-IE'); }
+
+function isMissing(v){ return v == null || MISSING.indexOf(String(v).trim().toLowerCase()) >= 0; }
+function asNum(v){ if (isMissing(v)) return NaN; const n = Number(String(v).trim().replace(/,/g,'')); return isFinite(n) ? n : NaN; }
+
+function detectSchema(cols, rows){
+  const probe = rows.slice(0, 2000);
+  return cols.map((c, ci) => {
+    let seen = 0, numeric = 0, missing = 0; const distinct = new Set();
+    for (const r of probe){
+      const v = r[ci];
+      if (isMissing(v)){ missing++; continue; }
+      seen++;
+      if (distinct.size <= 2000) distinct.add(String(v).trim());
+      if (!isNaN(asNum(v))) numeric++;
+    }
+    const numericRatio = seen ? numeric/seen : 0;
+    const dc = distinct.size;
+    let type;
+    if (numericRatio >= 0.9) type = 'numeric';
+    else if (dc <= LIMITS.catLevels + 1) type = 'categorical';
+    else type = 'text';
+    return { name: c, type, numericRatio, distinct: dc, missing, probed: probe.length };
+  });
+}
+
+function renderPreview(){
+  if (!data) { $('previewWrap').innerHTML=''; $('dataSummary').textContent=''; return; }
+  const showCols = data.cols.slice(0, 8);
+  let html = '<table class="preview"><tr>' + showCols.map(c => '<th>'+esc(c)+'</th>').join('') + (data.cols.length>8?'<th>&hellip;</th>':'') + '</tr>';
+  for (const r of data.rows.slice(0,5)){
+    html += '<tr>' + showCols.map((_,i) => '<td>'+esc(r[i])+'</td>').join('') + (data.cols.length>8?'<td>&hellip;</td>':'') + '</tr>';
+  }
+  $('previewWrap').innerHTML = html + '</table>';
+  $('dataSummary').textContent = (data.isSample ? 'Bundled synthetic sample' : 'File: ' + data.name) + ' - ' +
+    fmt(data.rows.length) + ' rows x ' + data.cols.length + ' columns. First rows shown below.';
+}
+function esc(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;') }
+
+function renderPickers(){
+  if (!schema) return;
+  const numericCols = schema.filter(s => s.type === 'numeric');
+  const ts = $('targetSelect');
+  ts.innerHTML = schema.map((s, i) => {
+    const tag = s.type === 'numeric' ? '' : (s.type === 'categorical' ? ' (text - not usable as target)' : ' (text)');
+    const dis = s.type !== 'numeric' ? ' disabled' : '';
+    return '<option value="'+i+'"'+dis+'>'+esc(s.name)+tag+'</option>';
+  }).join('');
+  let def = -1;
+  if (data.isSample){ def = schema.findIndex(s => s.name === 'price_per_person'); }
+  if (def < 0){ for (let i = schema.length - 1; i >= 0; i--){ if (schema[i].type === 'numeric'){ def = i; break; } } }
+  ts.value = String(def);
+  renderFeatures();
+  ts.onchange = renderFeatures;
+}
+function renderFeatures(){
+  const ti = +$('targetSelect').value;
+  $('featureList').innerHTML = schema.map((s, i) => {
+    if (i === ti) return '';
+    const warn = s.type === 'text';
+    const badge = s.type === 'numeric' ? '<span class="badge">number</span>'
+      : warn ? '<span class="badge warn">text - '+fmt(s.distinct)+'+ values</span>'
+      : '<span class="badge">category - '+s.distinct+' values</span>';
+    const miss = s.missing ? ' <span style="color:var(--muted);font-size:11px">'+s.missing+' blank</span>' : '';
+    return '<label class="colItem"><input type="checkbox" data-col="'+i+'"'+(warn?'':' checked')+'> '+
+      '<span>'+esc(s.name)+' '+badge+miss+'</span></label>';
+  }).join('');
+  $('trainBtn').disabled = !pyReady;
+}
+
+function resetResults(){
+  for (const k of Object.keys(charts)){ charts[k].destroy(); }
+  charts = {};
+  $('metricsTable').innerHTML = ''; $('errBox').textContent = ''; $('dqBox').innerHTML = '';
+  $('predOut').style.display = 'none'; $('predForm').innerHTML = '';
+  $('batchInput').disabled = true; $('batchBtn').disabled = true; $('batchStatus').textContent=''; $('batchErr').textContent='';
+  trained = false;
+}
 
 async function boot(){
   try {
     setStatus('Loading Python runtime (Pyodide + scikit-learn)...', true);
     pyodide = await loadPyodide();
-    await pyodide.loadPackage(['numpy','scikit-learn']);
-    setStatus('Fetching synthetic sample data...', true);
-    const csv = await (await fetch('sample_data.csv')).text();
-    pyodide.globals.set('csv_text', csv);
+    await pyodide.loadPackage(['numpy','pandas','scikit-learn']);
+    pyReady = true;
+    setStatus('Runtime ready. Loading sample data...', true);
+    await loadSample();
+  } catch (e) { fail(e); }
+}
+
+async function loadSample(){
+  const csv = await (await fetch('sample_data.csv')).text();
+  Papa.parse(csv, { header: true, skipEmptyLines: 'greedy', complete: p => {
+    setData({ name: 'sample_data.csv', cols: p.meta.fields, rows: p.data.map(r => p.meta.fields.map(f => r[f])), isSample: true });
+    setStatus('Sample loaded. Training on the sample...', true);
+    train();
+  }});
+}
+
+function setData(d){
+  data = d; schema = detectSchema(d.cols, d.rows);
+  renderPreview(); renderPickers(); resetResults();
+  $('banner').innerHTML = d.isSample
+    ? '<strong>Demo data only.</strong> The 3,000 sample rows are synthetic, generated from a fixed formula plus noise (seed fixed for reproducibility). They do not represent real packages, customers, or prices.'
+    : '<strong>Your data stays on your device.</strong> "'+esc(d.name)+'" was read by your browser and is never uploaded. ' +
+      'Model quality depends entirely on your data: the holdout metrics below tell you how well the model fits rows it has not seen.';
+  $('predIntro').textContent = d.isSample
+    ? 'The result is a value similar to those in the synthetic sample, not an optimal-price recommendation.'
+    : 'Once trained, predict a single case below, or upload a CSV of new rows (same columns as training) to download predictions for all of them. ' +
+      'A prediction is a value similar to those in your training data - in sales data, a price similar to what customers actually accepted - ' +
+      'not a recommendation of the best price to charge.';
+}
+
+$('srcSample').addEventListener('change', () => { $('fileInput').classList.add('hidden'); if (pyReady){ setStatus('Loading sample data...', true); loadSample(); } });
+$('srcUpload').addEventListener('change', () => { $('fileInput').classList.remove('hidden'); $('fileInput').click(); });
+$('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  $('dataErr').textContent = '';
+  if (f.size > LIMITS.bytes){ $('dataErr').textContent = 'That file is ' + (f.size/1048576).toFixed(1) + ' MB. The limit is 10 MB - take a random sample of your rows and try again.'; return; }
+  Papa.parse(f, { header: true, skipEmptyLines: 'greedy', complete: p => {
+    const cols = (p.meta.fields || []).map(c => String(c == null ? '' : c).trim());
+    if (!cols.length || cols.some(c => !c)){ $('dataErr').textContent = 'Could not read column names from the first row. Make sure the CSV has a header row.'; return; }
+    if (new Set(cols).size !== cols.length){ $('dataErr').textContent = 'Two columns have the same name. Please rename duplicates and try again.'; return; }
+    if (cols.length > LIMITS.cols){ $('dataErr').textContent = 'That file has ' + cols.length + ' columns. The limit is ' + LIMITS.cols + ' - drop some columns and try again.'; return; }
+    const rows = p.data.map(r => cols.map(c => r[c]));
+    if (rows.length > LIMITS.rows){ $('dataErr').textContent = 'That file has ' + fmt(rows.length) + ' rows. The limit is ' + fmt(LIMITS.rows) + ' - take a random sample and try again.'; return; }
+    if (rows.length < 20){ $('dataErr').textContent = 'Only ' + rows.length + ' usable rows found. You need at least 20 to train and test a model.'; return; }
+    setData({ name: f.name, cols, rows, isSample: false });
+    setStatus('File loaded. Choose the target and input columns, then press Train models.', false);
+  }, error: err => { $('dataErr').textContent = 'Could not parse that file as CSV: ' + err.message; } });
+});
+
+$('trainBtn').addEventListener('click', train);
+
+async function train(){
+  if (!pyReady || !data) return;
+  resetResults();
+  $('errBox').textContent = '';
+  const ti = +$('targetSelect').value;
+  const feats = [...document.querySelectorAll('#featureList input:checked')].map(cb => +cb.dataset.col);
+  if (ti < 0 || schema[ti].type !== 'numeric'){ $('errBox').textContent = 'Pick a numeric target column.'; return; }
+  if (!feats.length){ $('errBox').textContent = 'Tick at least one input column.'; return; }
+  targetCol = data.cols[ti]; isSampleRun = data.isSample;
+  const cols = [targetCol].concat(feats.map(i => data.cols[i]));
+  const idx = [ti].concat(feats);
+  const rows = data.rows.map(r => idx.map(i => r[i]));
+  setStatus('Preparing ' + fmt(rows.length) + ' rows...', true);
+  try {
+    pyodide.globals.set('payload_json', JSON.stringify({ cols, target: targetCol, features: cols.slice(1), rows }));
     setStatus('Training models in your browser...', true);
-    const resultJson = await pyodide.runPythonAsync(`
-import numpy as np, json
-from io import StringIO
+    const resultJson = await pyodide.runPythonAsync(PY_FIT);
+    const res = JSON.parse(resultJson);
+    if (res.error){ setStatus('Could not train on this data.', false); $('errBox').textContent = res.error; return; }
+    bestName = res.best; spec = res.spec; trained = true;
+    renderMetrics(res); drawComparison(res.metrics); drawPredActual(res.y_test, res.y_pred, bestName); drawErrors(res.y_test, res.y_pred);
+    renderDQ(res); buildPredForm();
+    $('batchInput').disabled = false;
+    setStatus('Done. ' + bestName + ' performed best on the holdout (R-squared ' + res.metrics[bestName].r2.toFixed(3) + '). Metrics are from this browser-side run.', false);
+  } catch (e) { fail(e); }
+}
+
+const PY_FIT = `
+import json, numpy as np, pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
-rows = [r.split(',') for r in csv_text.strip().split('\\n')[1:]]
-X = np.array([[float(v) for v in r[:-1]] for r in rows])
-y = np.array([float(r[-1]) for r in rows])
-Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
+MISS_TOK = {'', 'na', 'n/a', 'null', 'none', '?', '-'}
+def clean_cat(s):
+    mask = s.isna() | s.astype(str).str.strip().str.lower().isin(MISS_TOK)
+    out = s.astype(str)
+    out[mask] = '(missing)'
+    return out
 
-models = {
-    'Linear Regression': LinearRegression(),
-    'Decision Tree': DecisionTreeRegressor(max_depth=12, random_state=42),
-    'Random Forest': RandomForestRegressor(n_estimators=40, random_state=42),
-}
-out = {}
-preds = {}
-for name, m in models.items():
-    m.fit(Xtr, ytr)
-    p = m.predict(Xte)
-    out[name] = {'r2': float(r2_score(yte, p)), 'rmse': float(mean_squared_error(yte, p) ** 0.5)}
-    preds[name] = p
+try:
+    payload = json.loads(payload_json)
+    cols = payload['cols']; target = payload['target']; feats = payload['features']
+    df = pd.DataFrame(payload['rows'], columns=cols)
+    y = pd.to_numeric(df[target], errors='coerce')
+    bad_target = int(y.isna().sum())
+    keep = y.notna()
+    df = df[keep].reset_index(drop=True)
+    y = y[keep].astype(float).reset_index(drop=True)
+    n = len(df)
+    if n < 20:
+        raise ValueError('Only ' + str(n) + ' rows had a usable number in the target column "' + target + '". You need at least 20.')
+    if y.nunique() < 5:
+        raise ValueError('The target column "' + target + '" has only ' + str(y.nunique()) + ' distinct values. This tool predicts a number across a range; pick a numeric target with varied values.')
 
-best = max(out, key=lambda k: out[k]['r2'])
-globals()['best_model'] = models[best]
-json.dumps({'metrics': out, 'best': best,
-            'y_test': [round(v,2) for v in yte.tolist()],
-            'y_pred': [round(v,2) for v in preds[best].tolist()]})
-`);
-    const res = JSON.parse(resultJson);
-    bestKey = res.best;
-    trained = true;
-    renderMetrics(res);
-    drawComparison(res.metrics);
-    drawPredActual(res.y_test, res.y_pred, bestKey);
-    drawErrors(res.y_test, res.y_pred);
-    document.getElementById('predBtn').disabled = false;
-    setStatus('Done. ' + res.best + ' performed best on the holdout. Metrics above are from this browser-side run.', false);
-  } catch (e) { fail(e); }
-}
+    spec = {'numeric': {}, 'categorical': {}, 'matrix_cols': [], 'features': list(feats), 'target': target}
+    blocks = []
+    notes = []
+    for c in feats:
+        raw = df[c]
+        num = pd.to_numeric(raw, errors='coerce')
+        if float(num.notna().mean()) >= 0.9:
+            med = float(num.median()) if num.notna().any() else 0.0
+            imp = int(num.isna().sum())
+            if imp:
+                notes.append(c + ': ' + str(imp) + ' missing or non-numeric values filled with the median (' + format(med, '.6g') + ')')
+            spec['numeric'][c] = med
+            blocks.append(num.fillna(med).astype(float).rename(c))
+        else:
+            s = clean_cat(raw)
+            top = list(s.value_counts().index[:19])
+            grouped = int(s.nunique()) - len(top)
+            s2 = s.where(s.isin(top), '(other)')
+            d = pd.get_dummies(s2, prefix=c)
+            spec['categorical'][c] = top
+            blocks.append(d.astype(float))
+            note = c + ': treated as ' + str(s.nunique()) + ' categories'
+            if grouped > 0:
+                note += '; the ' + str(grouped) + ' rarest were grouped as "(other)"'
+            notes.append(note)
+    X = pd.concat(blocks, axis=1)
+    spec['matrix_cols'] = [str(c) for c in X.columns]
+    Xv = X.values.astype(float)
+    yv = y.values
 
+    Xtr, Xte, ytr, yte = train_test_split(Xv, yv, test_size=0.2, random_state=42)
+    models = {
+        'Linear Regression': LinearRegression(),
+        'Decision Tree': DecisionTreeRegressor(max_depth=12, random_state=42),
+        'Random Forest': RandomForestRegressor(n_estimators=40, random_state=42),
+    }
+    metrics = {}
+    preds = {}
+    for name, m in models.items():
+        m.fit(Xtr, ytr)
+        p = m.predict(Xte)
+        metrics[name] = {'r2': float(r2_score(yte, p)),
+                         'rmse': float(mean_squared_error(yte, p) ** 0.5),
+                         'mae': float(mean_absolute_error(yte, p))}
+        preds[name] = p
+    best = max(metrics, key=lambda k: metrics[k]['r2'])
+    globals()['TRAINED'] = {'models': models, 'best': best, 'spec': spec}
+
+    idxs = np.arange(len(yte))
+    if len(idxs) > 1500:
+        idxs = np.random.RandomState(1).choice(idxs, 1500, replace=False)
+    result = {'metrics': metrics, 'best': best, 'spec': spec,
+              'n_rows': int(n), 'n_test': int(len(yte)), 'dropped_target': bad_target,
+              'n_inputs': int(Xv.shape[1]), 'notes': notes,
+              'y_test': [round(float(v), 4) for v in yte[idxs]],
+              'y_pred': [round(float(v), 4) for v in preds[best][idxs]],
+              'y_mean': float(y.mean())}
+    out_json = json.dumps(result)
+except Exception as ex:
+    out_json = json.dumps({'error': str(ex)})
+out_json
+`;
+
+const PY_PREDICT = `
+import json, numpy as np, pandas as pd
+MISS_TOK = {'', 'na', 'n/a', 'null', 'none', '?', '-'}
+def clean_cat(s):
+    mask = s.isna() | s.astype(str).str.strip().str.lower().isin(MISS_TOK)
+    out = s.astype(str)
+    out[mask] = '(missing)'
+    return out
+
+try:
+    T = globals()['TRAINED']
+    spec = T['spec']; model = T['models'][T['best']]
+    payload = json.loads(predict_json)
+    feats = payload['features']
+    df = pd.DataFrame(payload['rows'], columns=feats)
+    blocks = []
+    for c in feats:
+        if c in spec['numeric']:
+            num = pd.to_numeric(df[c], errors='coerce')
+            blocks.append(num.fillna(spec['numeric'][c]).astype(float).rename(c))
+        else:
+            s = clean_cat(df[c])
+            s2 = s.where(s.isin(spec['categorical'][c]), '(other)')
+            blocks.append(pd.get_dummies(s2, prefix=c).astype(float))
+    X = pd.concat(blocks, axis=1).reindex(columns=spec['matrix_cols'], fill_value=0.0)
+    p = model.predict(X.values.astype(float))
+    out_json = json.dumps({'preds': [round(float(v), 2) for v in p]})
+except Exception as ex:
+    out_json = json.dumps({'error': str(ex)})
+out_json
+`;
+
+function unit(){ return isSampleRun ? ' \u20AC' : ''; }
 function renderMetrics(res){
   const m = res.metrics;
-  let html = '<table class="metrics"><tr><th>Model</th><th>R-squared</th><th>RMSE (&euro;)</th></tr>';
+  let html = '<table class="metrics"><tr><th>Model</th><th>R-squared</th><th>RMSE</th><th>Mean abs. error</th></tr>';
   for (const name of Object.keys(m)){
     const cls = name === res.best ? ' class="best"' : '';
-    html += '<tr' + cls + '><td>' + name + (name===res.best ? ' (best)' : '') + '</td><td>' + m[name].r2.toFixed(4) + '</td><td>' + m[name].rmse.toFixed(2) + '</td></tr>';
+    html += '<tr' + cls + '><td>' + name + (name===res.best ? ' (best)' : '') + '</td><td>' + m[name].r2.toFixed(4) +
+      '</td><td>' + m[name].rmse.toFixed(2) + unit() + '</td><td>' + m[name].mae.toFixed(2) + unit() + '</td></tr>';
   }
-  document.getElementById('metricsTable').innerHTML = html + '</table>';
+  $('metricsTable').innerHTML = html + '</table>';
 }
-
+function renderDQ(res){
+  let items = ['Trained on ' + fmt(res.n_rows) + ' rows (' + fmt(res.n_test) + ' held out for testing), ' +
+    res.n_inputs + ' model inputs after expanding categories.'];
+  if (res.dropped_target) items.push(res.dropped_target + ' rows were dropped because the target "' + esc(targetCol) + '" had no usable number.');
+  res.notes.forEach(n => items.push(esc(n)));
+  items.push('Before trusting these numbers for a real decision, compare the typical error with what a wrong prediction costs you - a good R-squared can still come with errors too large for a thin-margin call.');
+  $('dqBox').innerHTML = '<ul style="margin:6px 0 0;padding-left:18px">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>';
+}
 function drawComparison(metrics){
   const names = Object.keys(metrics);
-  new Chart(document.getElementById('cmpChart'), {
+  const vals = names.map(n => metrics[n].r2);
+  charts.cmp = new Chart($('cmpChart'), {
     type: 'bar',
     data: { labels: names, datasets: [{ label: 'Holdout R-squared',
-      data: names.map(n => metrics[n].r2),
-      backgroundColor: names.map(n => n === bestKey ? '#2b32b2' : '#9aa6d8'), borderRadius: 6 }] },
+      data: vals, backgroundColor: names.map(n => n === bestName ? '#2b32b2' : '#9aa6d8'), borderRadius: 6 }] },
     options: { plugins: { legend: { display: false } },
-      scales: { y: { min: 0, max: 1, title: { display: true, text: 'R-squared' } } } }
+      scales: { y: { min: Math.min(0, Math.floor(Math.min(...vals) * 10) / 10), max: 1, title: { display: true, text: 'R-squared' } } } }
   });
 }
-
 function drawPredActual(yt, yp, best){
   const pts = yt.map((v, i) => ({ x: v, y: yp[i] }));
   const lo = Math.min(...yt), hi = Math.max(...yt);
-  new Chart(document.getElementById('pvChart'), {
+  const t = isSampleRun ? 'price per person (EUR)' : '"' + targetCol + '"';
+  charts.pv = new Chart($('pvChart'), {
     type: 'scatter',
     data: { datasets: [
       { label: 'Test rows', data: pts, backgroundColor: 'rgba(43,50,178,0.45)', pointRadius: 2.5 },
       { label: 'Perfect prediction', type: 'line', data: [{x:lo,y:lo},{x:hi,y:hi}], borderColor: '#b0004b', borderWidth: 2, pointRadius: 0 }
     ]},
-    options: { plugins: { title: { display: true, text: best + ': predicted vs actual price per person (EUR)' }, legend: { display: false } },
+    options: { plugins: { title: { display: true, text: best + ': predicted vs actual ' + t }, legend: { display: false } },
       scales: { x: { title: { display: true, text: 'Actual' } }, y: { title: { display: true, text: 'Predicted' } } } }
   });
 }
-
 function drawErrors(yt, yp){
   const errs = yp.map((v, i) => v - yt[i]);
   const bins = 31, lo = Math.min(...errs), hi = Math.max(...errs), w = (hi - lo) / bins || 1;
   const counts = new Array(bins).fill(0);
   errs.forEach(e => { let b = Math.floor((e - lo) / w); if (b >= bins) b = bins - 1; counts[b]++; });
   const labels = counts.map((_, i) => Math.round(lo + (i + .5) * w));
-  new Chart(document.getElementById('errChart'), {
+  charts.err = new Chart($('errChart'), {
     type: 'bar',
     data: { labels, datasets: [{ label: 'Test rows', data: counts, backgroundColor: '#6d78c9', borderRadius: 3 }] },
     options: { plugins: { legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Prediction error (EUR)' } }, y: { title: { display: true, text: 'Count' } } } }
+      scales: { x: { title: { display: true, text: 'Prediction error' + unit() } }, y: { title: { display: true, text: 'Count' } } } }
   });
+  $('errSub').textContent = 'Residuals (predicted minus actual) on the held-out test set' + (isSampleRun ? ', in \u20AC per person.' : ' for "' + targetCol + '".') +
+    ' Check whether the typical error is small enough for your use before relying on it.';
 }
 
-document.getElementById('predForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!trained) return;
-  const f = e.target;
-  const x = [+f.stars.value, +f.board.value, +f.week.value, +f.lead.value, +f.dur.value, +f.pool.value, +f.seaview.value];
-  pyodide.globals.set('x_input', x);
-  const out = await pyodide.runPythonAsync('float(best_model.predict(__import__("numpy").array([x_input]))[0])');
-  document.getElementById('predOut').style.display = 'block';
-  document.getElementById('predVal').textContent = '\u20AC' + out.toFixed(2);
-  document.getElementById('predMeta').textContent = '(from ' + bestKey + ', trained in this browser session)';
+function buildPredForm(){
+  const f = $('predForm');
+  f.innerHTML = spec.features.map(c => {
+    if (c in spec.numeric){
+      return '<div><label>' + esc(c) + ' (number)</label><input name="' + esc(c) + '" type="number" step="any" placeholder="median ' + (+spec.numeric[c].toFixed(4)) + '"></div>';
+    }
+    const levels = spec.categorical[c].concat(['(other)','(missing)']);
+    return '<div><label>' + esc(c) + '</label><select name="' + esc(c) + '">' +
+      levels.map(l => '<option>' + esc(l) + '</option>').join('') + '</select></div>';
+  }).join('') + '<div style="align-self:end"><button type="submit" id="predBtn">Predict ' + esc(targetCol) + '</button></div>';
+  $('predTargetName').textContent = targetCol;
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    if (!trained) return;
+    const row = spec.features.map(c => {
+      const el = f.elements[c];
+      return el ? el.value : '';
+    });
+    try {
+      pyodide.globals.set('predict_json', JSON.stringify({ features: spec.features, rows: [row] }));
+      const res = JSON.parse(await pyodide.runPythonAsync(PY_PREDICT));
+      if (res.error){ $('predOut').style.display='block'; $('predVal').textContent=''; $('predMeta').textContent = 'Could not predict: ' + res.error; return; }
+      $('predOut').style.display = 'block';
+      $('predVal').textContent = (isSampleRun ? '\u20AC' : '') + res.preds[0].toFixed(2);
+      $('predMeta').textContent = '(from ' + bestName + ', trained in this browser session' +
+        (isSampleRun ? ' on synthetic sample data' : ' on ' + (data ? data.name : 'your file')) + ')';
+    } catch (err) { $('predMeta').textContent = String(err); }
+  };
+}
+
+let batchRows = null, batchCols = null;
+$('batchInput').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = '';
+  batchRows = null; batchCols = null; $('batchErr').textContent = ''; $('batchStatus').textContent = ''; $('batchBtn').disabled = true;
+  if (!f || !trained) return;
+  if (f.size > LIMITS.bytes){ $('batchErr').textContent = 'That file is ' + (f.size/1048576).toFixed(1) + ' MB. The limit is 10 MB.'; return; }
+  Papa.parse(f, { header: true, skipEmptyLines: 'greedy', complete: p => {
+    const cols = (p.meta.fields || []).map(c => String(c == null ? '' : c).trim());
+    const missingCols = spec.features.filter(c => cols.indexOf(c) < 0);
+    if (missingCols.length){ $('batchErr').textContent = 'That file is missing training column' + (missingCols.length>1?'s':'') + ': ' + missingCols.join(', ') + '. Use a CSV with the same input columns you trained on.'; return; }
+    const rows = p.data.map(r => cols.map(c => r[c]));
+    if (rows.length > LIMITS.batchRows){ $('batchErr').textContent = 'That file has ' + fmt(rows.length) + ' rows. The batch limit is ' + fmt(LIMITS.batchRows) + '.'; return; }
+    if (!rows.length){ $('batchErr').textContent = 'No data rows found in that file.'; return; }
+    batchRows = rows; batchCols = cols;
+    $('batchStatus').textContent = fmt(rows.length) + ' rows ready. Predictions use ' + bestName + ' and are appended as a new column.';
+    $('batchBtn').disabled = false;
+  }, error: err => { $('batchErr').textContent = 'Could not parse that file as CSV: ' + err.message; } });
 });
+
+$('batchBtn').addEventListener('click', async () => {
+  if (!batchRows || !trained) return;
+  $('batchErr').textContent = ''; $('batchBtn').disabled = true;
+  $('batchStatus').textContent = 'Predicting ' + fmt(batchRows.length) + ' rows...';
+  try {
+    pyodide.globals.set('predict_json', JSON.stringify({ features: spec.features,
+      rows: batchRows.map(r => spec.features.map(c => r[batchCols.indexOf(c)])) }));
+    const res = JSON.parse(await pyodide.runPythonAsync(PY_PREDICT));
+    if (res.error){ $('batchErr').textContent = 'Prediction failed: ' + res.error; $('batchStatus').textContent=''; return; }
+    const outCols = batchCols.concat(['predicted_' + targetCol]);
+    const lines = [outCols.map(csvEsc).join(',')];
+    batchRows.forEach((r, i) => lines.push(r.map(csvEsc).join(',') + ',' + res.preds[i].toFixed(2)));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'predictions.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    $('batchStatus').textContent = 'Downloaded predictions.csv with ' + fmt(batchRows.length) + ' rows. Predictions assume these rows come from the same kind of data as the training file.';
+  } catch (err) { $('batchErr').textContent = String(err); $('batchStatus').textContent=''; }
+  $('batchBtn').disabled = false;
+});
+function csvEsc(v){ const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
 
 boot();
 </script>
