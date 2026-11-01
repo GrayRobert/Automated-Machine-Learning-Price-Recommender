@@ -48,7 +48,7 @@
   <h1>Price Recommender - Interactive Demo</h1>
   <p>Companion demo for <a href="https://github.com/GrayRobert/Automated-Machine-Learning-Price-Recommender">GrayRobert/Automated-Machine-Learning-Price-Recommender</a>
   (BSc thesis, 2019). Three regression models train <strong>in your browser</strong> on synthetic holiday-package data using
-  scikit-learn compiled to WebAssembly (Pyodide). Nothing leaves your machine.</p>
+  scikit-learn compiled to WebAssembly (Pyodide). Training and prediction run locally on the bundled synthetic sample data; no user data is uploaded or collected.</p>
 </header>
 <div class="wrap">
   <div class="banner"><strong>Demo data only.</strong> The 3,000 training rows are synthetic, generated from a fixed formula plus noise
@@ -81,8 +81,8 @@
     </div>
 
     <div class="card wide">
-      <h2>5. Try a recommendation</h2>
-      <p class="sub">Runs the best-trained model on your inputs.</p>
+      <h2>5. Try a prediction</h2>
+      <p class="sub">Runs the best-trained model on your inputs. The result is a predicted historical-style price from the synthetic regression, not an optimal-price recommendation.</p>
       <form id="predForm">
         <div><label>Accommodation stars</label><input name="stars" type="number" min="2" max="5" value="4" required></div>
         <div><label>Board basis</label><select name="board"><option value="0">Room only</option><option value="1">B&amp;B</option><option value="2">Half board</option><option value="3">All inclusive</option></select></div>
@@ -91,9 +91,9 @@
         <div><label>Duration (nights)</label><select name="dur"><option>3</option><option selected>7</option><option>10</option><option>14</option></select></div>
         <div><label>Pool</label><select name="pool"><option value="1">Yes</option><option value="0">No</option></select></div>
         <div><label>Sea view</label><select name="seaview"><option value="1">Yes</option><option value="0">No</option></select></div>
-        <div style="align-self:end"><button type="submit" id="predBtn" disabled>Recommend price</button></div>
+        <div style="align-self:end"><button type="submit" id="predBtn" disabled>Predict price</button></div>
       </form>
-      <div id="predOut">Recommended price: <strong id="predVal"></strong> <span id="predMeta" style="color:var(--muted);font-size:13px"></span></div>
+      <div id="predOut">Predicted price: <strong id="predVal"></strong> <span id="predMeta" style="color:var(--muted);font-size:13px"></span></div>
     </div>
   </div>
 </div>
