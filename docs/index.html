@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Recommender - Interactive Demo</title>
+<script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root { --ink:#1b2030; --muted:#5b6478; --line:#e4e8f0; --bg:#f5f7fb; --card:#ffffff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:linear-gradient(90deg,#2b32b2,#a0004b); color:#fff; padding:28px 24px; }
+  header h1 { margin:0 0 6px; font-size:24px; font-weight:600; }
+  header p { margin:0; opacity:.92; font-size:14px; max-width:880px; }
+  header a { color:#cfe0ff; }
+  .wrap { max-width:1080px; margin:0 auto; padding:24px; }
+  .banner { background:#fff8e6; border:1px solid #f0d98c; border-radius:8px; padding:12px 16px; font-size:13.5px; margin-bottom:20px; color:#6b5410; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:860px){ .grid { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; }
+  .card h2 { margin:0 0 4px; font-size:16px; }
+  .card .sub { color:var(--muted); font-size:12.5px; margin:0 0 14px; }
+  .wide { grid-column:1 / -1; }
+  #status { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--muted); }
+  .spinner { width:16px; height:16px; border:2px solid #c7cede; border-top-color:#2b32b2; border-radius:50%; animation:spin 0.8s linear infinite; display:none; }
+  .spinner.on { display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  button { background:#2b32b2; color:#fff; border:0; border-radius:6px; padding:9px 18px; font-size:14px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  table.metrics { width:100%; border-collapse:collapse; font-size:13.5px; margin-top:8px; }
+  table.metrics th, table.metrics td { text-align:right; padding:7px 10px; border-bottom:1px solid var(--line); }
+  table.metrics th:first-child, table.metrics td:first-child { text-align:left; }
+  table.metrics th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  table.metrics tr.best td { background:#eef2ff; font-weight:600; }
+  form { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  label { font-size:12.5px; color:var(--muted); display:block; margin-bottom:4px; }
+  input, select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
+  #predOut { margin-top:16px; font-size:15px; display:none; }
+  #predOut strong { font-size:22px; color:#2b32b2; }
+  canvas { max-width:100%; }
+  footer { text-align:center; color:var(--muted); font-size:12.5px; padding:28px 16px 40px; }
+  .err { color:#b00020; font-size:13px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Price Recommender - Interactive Demo</h1>
+  <p>Companion demo for <a href="https://github.com/GrayRobert/Automated-Machine-Learning-Price-Recommender">GrayRobert/Automated-Machine-Learning-Price-Recommender</a>
+  (BSc thesis, 2019). Three regression models train <strong>in your browser</strong> on synthetic holiday-package data using
+  scikit-learn compiled to WebAssembly (Pyodide). Nothing leaves your machine.</p>
+</header>
+<div class="wrap">
+  <div class="banner"><strong>Demo data only.</strong> The 3,000 training rows are synthetic, generated from a fixed formula plus noise
+  (seed fixed for reproducibility). They do not represent real packages, customers, or prices, and results here demonstrate the
+  training workflow, not production accuracy.</div>
+
+  <div class="grid">
+    <div class="card wide">
+      <h2>1. Train the models</h2>
+      <p class="sub">Linear Regression, Decision Tree and Random Forest are trained on an 80/20 split. Metrics are computed on the held-out test set after training.</p>
+      <div id="status"><span class="spinner" id="spin"></span><span id="statusText">Loading Python runtime...</span></div>
+      <div class="err" id="errBox"></div>
+      <div id="metricsTable"></div>
+    </div>
+
+    <div class="card">
+      <h2>2. Model comparison</h2>
+      <p class="sub">Holdout R-squared by model.</p>
+      <canvas id="cmpChart"></canvas>
+    </div>
+    <div class="card">
+      <h2>3. Predicted vs actual</h2>
+      <p class="sub">Best model on the 600-row test set. Points near the diagonal are well predicted.</p>
+      <canvas id="pvChart"></canvas>
+    </div>
+    <div class="card wide">
+      <h2>4. Prediction error distribution</h2>
+      <p class="sub">Residuals (predicted minus actual) on the test set, in &euro; per person.</p>
+      <canvas id="errChart" height="90"></canvas>
+    </div>
+
+    <div class="card wide">
+      <h2>5. Try a recommendation</h2>
+      <p class="sub">Runs the best-trained model on your inputs.</p>
+      <form id="predForm">
+        <div><label>Accommodation stars</label><input name="stars" type="number" min="2" max="5" value="4" required></div>
+        <div><label>Board basis</label><select name="board"><option value="0">Room only</option><option value="1">B&amp;B</option><option value="2">Half board</option><option value="3">All inclusive</option></select></div>
+        <div><label>Travel week (1-52)</label><input name="week" type="number" min="1" max="52" value="30" required></div>
+        <div><label>Days before travel</label><input name="lead" type="number" min="1" max="180" value="45" required></div>
+        <div><label>Duration (nights)</label><select name="dur"><option>3</option><option selected>7</option><option>10</option><option>14</option></select></div>
+        <div><label>Pool</label><select name="pool"><option value="1">Yes</option><option value="0">No</option></select></div>
+        <div><label>Sea view</label><select name="seaview"><option value="1">Yes</option><option value="0">No</option></select></div>
+        <div style="align-self:end"><button type="submit" id="predBtn" disabled>Recommend price</button></div>
+      </form>
+      <div id="predOut">Recommended price: <strong id="predVal"></strong> <span id="predMeta" style="color:var(--muted);font-size:13px"></span></div>
+    </div>
+  </div>
+</div>
+<footer>Built with Pyodide (scikit-learn on WebAssembly) and Chart.js. Source and thesis:
+<a href="https://github.com/GrayRobert/Automated-Machine-Learning-Price-Recommender">GitHub</a>.</footer>
+<script>
+const FEATURES = ['accom_stars','board_basis','travel_week','days_before_travel','holiday_duration','has_pool','has_sea_view'];
+let pyodide = null, bestKey = null, bestName = null, trained = false;
+const statusEl = document.getElementById('statusText');
+const spin = document.getElementById('spin');
+function setStatus(t, spinning){ statusEl.textContent = t; spin.classList.toggle('on', !!spinning); }
+function fail(msg){ setStatus('Failed.', false); document.getElementById('errBox').textContent = String(msg); }
+
+async function boot(){
+  try {
+    setStatus('Loading Python runtime (Pyodide + scikit-learn)...', true);
+    pyodide = await loadPyodide();
+    await pyodide.loadPackage(['numpy','scikit-learn']);
+    setStatus('Fetching synthetic sample data...', true);
+    const csv = await (await fetch('sample_data.csv')).text();
+    pyodide.globals.set('csv_text', csv);
+    setStatus('Training models in your browser...', true);
+    const resultJson = await pyodide.runPythonAsync(`
+import numpy as np, json
+from io import StringIO
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error
+
+rows = [r.split(',') for r in csv_text.strip().split('\\n')[1:]]
+X = np.array([[float(v) for v in r[:-1]] for r in rows])
+y = np.array([float(r[-1]) for r in rows])
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
+
+models = {
+    'Linear Regression': LinearRegression(),
+    'Decision Tree': DecisionTreeRegressor(max_depth=12, random_state=42),
+    'Random Forest': RandomForestRegressor(n_estimators=40, random_state=42),
+}
+out = {}
+preds = {}
+for name, m in models.items():
+    m.fit(Xtr, ytr)
+    p = m.predict(Xte)
+    out[name] = {'r2': float(r2_score(yte, p)), 'rmse': float(mean_squared_error(yte, p) ** 0.5)}
+    preds[name] = p
+
+best = max(out, key=lambda k: out[k]['r2'])
+globals()['best_model'] = models[best]
+json.dumps({'metrics': out, 'best': best,
+            'y_test': [round(v,2) for v in yte.tolist()],
+            'y_pred': [round(v,2) for v in preds[best].tolist()]})
+`);
+    const res = JSON.parse(resultJson);
+    bestKey = res.best;
+    trained = true;
+    renderMetrics(res);
+    drawComparison(res.metrics);
+    drawPredActual(res.y_test, res.y_pred, bestKey);
+    drawErrors(res.y_test, res.y_pred);
+    document.getElementById('predBtn').disabled = false;
+    setStatus('Done. ' + res.best + ' performed best on the holdout. Metrics above are from this browser-side run.', false);
+  } catch (e) { fail(e); }
+}
+
+function renderMetrics(res){
+  const m = res.metrics;
+  let html = '<table class="metrics"><tr><th>Model</th><th>R-squared</th><th>RMSE (&euro;)</th></tr>';
+  for (const name of Object.keys(m)){
+    const cls = name === res.best ? ' class="best"' : '';
+    html += '<tr' + cls + '><td>' + name + (name===res.best ? ' (best)' : '') + '</td><td>' + m[name].r2.toFixed(4) + '</td><td>' + m[name].rmse.toFixed(2) + '</td></tr>';
+  }
+  document.getElementById('metricsTable').innerHTML = html + '</table>';
+}
+
+function drawComparison(metrics){
+  const names = Object.keys(metrics);
+  new Chart(document.getElementById('cmpChart'), {
+    type: 'bar',
+    data: { labels: names, datasets: [{ label: 'Holdout R-squared',
+      data: names.map(n => metrics[n].r2),
+      backgroundColor: names.map(n => n === bestKey ? '#2b32b2' : '#9aa6d8'), borderRadius: 6 }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { y: { min: 0, max: 1, title: { display: true, text: 'R-squared' } } } }
+  });
+}
+
+function drawPredActual(yt, yp, best){
+  const pts = yt.map((v, i) => ({ x: v, y: yp[i] }));
+  const lo = Math.min(...yt), hi = Math.max(...yt);
+  new Chart(document.getElementById('pvChart'), {
+    type: 'scatter',
+    data: { datasets: [
+      { label: 'Test rows', data: pts, backgroundColor: 'rgba(43,50,178,0.45)', pointRadius: 2.5 },
+      { label: 'Perfect prediction', type: 'line', data: [{x:lo,y:lo},{x:hi,y:hi}], borderColor: '#b0004b', borderWidth: 2, pointRadius: 0 }
+    ]},
+    options: { plugins: { title: { display: true, text: best + ': predicted vs actual price per person (EUR)' }, legend: { display: false } },
+      scales: { x: { title: { display: true, text: 'Actual' } }, y: { title: { display: true, text: 'Predicted' } } } }
+  });
+}
+
+function drawErrors(yt, yp){
+  const errs = yp.map((v, i) => v - yt[i]);
+  const bins = 31, lo = Math.min(...errs), hi = Math.max(...errs), w = (hi - lo) / bins || 1;
+  const counts = new Array(bins).fill(0);
+  errs.forEach(e => { let b = Math.floor((e - lo) / w); if (b >= bins) b = bins - 1; counts[b]++; });
+  const labels = counts.map((_, i) => Math.round(lo + (i + .5) * w));
+  new Chart(document.getElementById('errChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Test rows', data: counts, backgroundColor: '#6d78c9', borderRadius: 3 }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { x: { title: { display: true, text: 'Prediction error (EUR)' } }, y: { title: { display: true, text: 'Count' } } } }
+  });
+}
+
+document.getElementById('predForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!trained) return;
+  const f = e.target;
+  const x = [+f.stars.value, +f.board.value, +f.week.value, +f.lead.value, +f.dur.value, +f.pool.value, +f.seaview.value];
+  pyodide.globals.set('x_input', x);
+  const out = await pyodide.runPythonAsync('float(best_model.predict(__import__("numpy").array([x_input]))[0])');
+  document.getElementById('predOut').style.display = 'block';
+  document.getElementById('predVal').textContent = '\u20AC' + out.toFixed(2);
+  document.getElementById('predMeta').textContent = '(from ' + bestKey + ', trained in this browser session)';
+});
+
+boot();
+</script>
+</body>
+</html>
