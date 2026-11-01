@@ -19,7 +19,9 @@
   .banner { background:#fff8e6; border:1px solid #f0d98c; border-radius:8px; padding:12px 16px; font-size:13.5px; margin-bottom:20px; color:#6b5410; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   @media (max-width:860px){ .grid { grid-template-columns:1fr; } }
+  .grid > * { min-width: 0; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; }
+  .previewWrap { max-width:100%; }
   .card h2 { margin:0 0 4px; font-size:16px; }
   .card .sub { color:var(--muted); font-size:12.5px; margin:0 0 14px; }
   .wide { grid-column:1 / -1; }
@@ -286,6 +288,7 @@ $('fileInput').addEventListener('change', e => {
     const rows = p.data.map(r => cols.map(c => r[c]));
     if (rows.length > LIMITS.rows){ $('dataErr').textContent = 'That file has ' + fmt(rows.length) + ' rows. The limit is ' + fmt(LIMITS.rows) + ' - take a random sample and try again.'; return; }
     if (rows.length < 20){ $('dataErr').textContent = 'Only ' + rows.length + ' usable rows found. You need at least 20 to train and test a model.'; return; }
+    $('srcUpload').checked = true;
     setData({ name: f.name, cols, rows, isSample: false });
     setStatus('File loaded. Choose the target and input columns, then press Train models.', false);
   }, error: err => { $('dataErr').textContent = 'Could not parse that file as CSV: ' + err.message; } });
